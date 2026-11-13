@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wilton · Weather Desk (Paper Trading)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   CONFIG lives in the <script> at the bottom (SUPABASE_URL / KEY)
+   ========================================================= */
+:root{
+  --bg:#07090c; --panel:#0d1117; --panel2:#11161d; --line:#1d2530; --line2:#2a3441;
+  --ink:#d7dee7; --ink2:#9aa6b4; --mute:#5f6b79;
+  --up:#19c5a5; --dist:#1e9bf0; --down:#f25f5c; --warn:#e8b04b; --accent:#e8b04b; --live:#19c5a5;
+  --up-bg:rgba(25,197,165,.10); --down-bg:rgba(242,95,92,.10);
+  --mono:'IBM Plex Mono',Consolas,'Courier New',monospace;
+  --sans:Inter,'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.35 var(--mono);font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit}
+
+/* ---------- white header ---------- */
+.topbar{height:58px;background:#fff;color:#0b0f14;display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:3px solid var(--accent)}
+.brand{display:flex;align-items:center;gap:10px;min-width:220px}
+.brand img{height:38px;display:block}
+.brand .word{font:800 26px/1 var(--sans);letter-spacing:.14em}
+.brand .sub{font:600 10px/1.2 var(--sans);letter-spacing:.16em;color:#5b6573;text-transform:uppercase}
+.paper{margin:0 auto;font:700 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;background:#0b0f14;color:#fff;padding:7px 12px;border-radius:3px;white-space:nowrap}
+.paper b{color:var(--accent)}
+.status{display:flex;align-items:center;gap:16px;font:500 12px var(--mono);color:#29313b;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;background:#9aa6b4;vertical-align:-1px}
+.dot.live{background:#0fa58a;box-shadow:0 0 0 3px rgba(15,165,138,.18);animation:pulse 2s infinite}
+.dot.stale{background:var(--warn)}
+.dot.err{background:var(--down)}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(15,165,138,0)}}
+.demo{background:var(--warn);color:#000;font:700 10px var(--sans);padding:3px 6px;border-radius:2px;letter-spacing:.1em}
+
+/* ---------- grid ---------- */
+.grid{display:grid;gap:6px;padding:6px;height:calc(100vh - 58px - 26px);
+  grid-template-columns:minmax(280px,22%) 1fr minmax(380px,30%);
+  grid-template-rows:58% 1fr;
+  grid-template-areas:"scan chart stats" "scan compare trades"}
+.panel{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;min-width:0}
+.ph{display:flex;align-items:center;gap:10px;height:30px;padding:0 10px;background:var(--panel2);border-bottom:1px solid var(--line);flex:none}
+.ph h2{margin:0;font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.ph .meta{margin-left:auto;color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ph h2{white-space:nowrap}
+.pb{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
+.pb::-webkit-scrollbar{width:8px;height:8px}.pb::-webkit-scrollbar-thumb{background:var(--line2)}
+#scan{grid-area:scan}#chart{grid-area:chart}#stats{grid-area:stats}#trades{grid-area:trades}#compare{grid-area:compare}
+
+.seg{display:flex;border:1px solid var(--line2)}
+.seg button{background:none;border:0;padding:3px 8px;font-size:11px;color:var(--ink2);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button.on{background:var(--line2);color:var(--ink)}
+
+/* ---------- tags & numbers ---------- */
+.up{color:var(--up)}.down{color:var(--down)}.muted{color:var(--mute)}.ink2{color:var(--ink2)}
+.tag{font:700 10px var(--sans);letter-spacing:.08em;padding:2px 5px;border-radius:2px;white-space:nowrap}
+.tag.taken{background:var(--up-bg);color:var(--up);border:1px solid rgba(25,197,165,.45)}
+.tag.skip{background:var(--down-bg);color:var(--down);border:1px solid rgba(242,95,92,.4)}
+.tag.open{color:var(--ink2);border:1px solid var(--line2)}
+.tag.settled{color:var(--ink);background:var(--line);border:1px solid var(--line2)}
+
+/* ---------- scanner feed ---------- */
+.sig{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;padding:6px 10px;border-bottom:1px solid var(--line);border-left:3px solid transparent}
+.sig.t{border-left-color:var(--up);background:linear-gradient(90deg,var(--up-bg),transparent 60%)}
+.sig.s{border-left-color:rgba(242,95,92,.7)}
+.sig .tm{color:var(--mute)}
+.sig .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sig .rs{grid-column:2/4;color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sig.new{animation:flash 2.5s}
+@keyframes flash{0%{background:rgba(232,176,75,.25)}}
+
+/* ---------- chart ---------- */
+.hero{display:flex;align-items:baseline;gap:18px;padding:10px 14px 0;flex:none;flex-wrap:wrap}
+.hero .big{font:600 30px/1 var(--mono)}
+.hero .lbl{font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:4px}
+.hero .sm{font:500 15px var(--mono)}
+.legend{display:flex;gap:14px;margin-left:auto;color:var(--ink2);font-size:11px;align-self:center}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid var(--ink);vertical-align:3px;margin-right:5px}
+.legend i.dash{border-top:2px dashed var(--accent)}
+#plot{flex:1;min-height:0;position:relative}
+#plot svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tip{position:absolute;pointer-events:none;background:#000;border:1px solid var(--line2);padding:7px 9px;font-size:11.5px;min-width:180px;max-width:300px;display:none;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.tip .q{color:var(--ink2);margin-top:4px;white-space:normal}
+
+/* ---------- stats ---------- */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line)}
+.tile{background:var(--panel);padding:8px 9px;min-width:0}
+.tile .v small{font:500 11px var(--mono);color:var(--mute);margin-left:6px}
+.tile .k{font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.tile .v{font:600 19px/1.25 var(--mono);margin-top:4px}
+.tile .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dist{padding:8px 12px 4px;border-top:1px solid var(--line)}
+.dist h3{margin:0;font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);display:flex;gap:8px}
+.dist h3 span{margin-left:auto;text-transform:none;letter-spacing:0;font:500 11px var(--mono);color:var(--ink2)}
+.dist svg{display:block;width:100%;height:auto}
+.tile .s{color:var(--mute);font-size:11px;margin-top:2px}
+.last{padding:10px 12px;border-top:1px solid var(--line)}
+.last h3{margin:0 0 6px;font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.bar{display:flex;height:8px;gap:2px;margin:6px 0}
+.bar span{display:block;border-radius:1px}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;background:var(--panel2);text-align:left;font:600 10px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:5px 7px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.ev{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}
+.r{text-align:right}
+tbody tr:hover{background:var(--panel2)}
+
+/* ---------- compare ---------- */
+.cmpwrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:0;height:100%}
+.cmpwrap>div{min-width:0;overflow-x:hidden;overflow-y:auto}
+#cmp td,#cmp th{padding:5px 6px}
+#cmp{font-size:12px}
+.cmpwrap>div+div{border-left:1px solid var(--line)}
+.sub{padding:8px 10px 4px;font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.city{display:grid;grid-template-columns:96px 1fr 70px;align-items:center;gap:8px;padding:3px 10px}
+.city .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
+.track{position:relative;height:10px}
+.track .zero{position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px solid var(--line2)}
+.track .b{position:absolute;top:1px;height:8px;border-radius:2px}
+.edge{padding:8px 10px;color:var(--ink2);font-size:12px;border-top:1px solid var(--line)}
+
+footer{height:26px;display:flex;align-items:center;gap:12px;padding:0 12px;color:var(--mute);font:500 11px var(--sans);border-top:1px solid var(--line)}
+footer b{color:var(--ink2)}
+
+@media (max-width:1100px){
+  .grid{height:auto;grid-template-columns:1fr;grid-template-rows:none;
+    grid-template-areas:"chart" "stats" "trades" "scan" "compare"}
+  #chart{height:420px}#scan,#trades,#compare{height:420px}
+  .paper{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <img id="logo" src="logo.png" alt="Wilton" onerror="this.remove();document.getElementById('word').hidden=false">
+    <div>
+      <div class="word" id="word" hidden>WILTON</div>
+      <div class="sub">Weather Desk · Fund 1</div>
+    </div>
+  </div>
+  <div class="paper"><b>●</b> Paper trading · research only · not betting advice</div>
+  <div class="status">
+    <span id="demo" class="demo" hidden>DEMO DATA</span>
+    <span><span id="dot" class="dot"></span><span id="feed">connecting…</span></span>
+    <span id="marks" class="ink2"></span>
+    <span id="clock"></span>
+  </div>
+</header>
+
+<main class="grid">
+  <!-- LEFT: everything the scanner looked at -->
+  <section class="panel" id="scan">
+    <div class="ph"><h2>Scanner</h2>
+      <div class="seg" id="sigFilter"><button data-f="all" class="on">All</button><button data-f="TAKEN">Taken</button><button data-f="SKIP">Skip</button></div>
+      <span class="meta" id="sigMeta"></span></div>
+    <div class="pb" id="sigList"></div>
+  </section>
+
+  <!-- CENTER TOP: P&L line -->
+  <section class="panel" id="chart">
+    <div class="ph"><h2>Strategy P&amp;L · cumulative, USD</h2>
+      <div class="seg" id="range" style="margin-left:auto"><button data-r="7">7D</button><button data-r="30">30D</button><button data-r="0" class="on">All</button></div></div>
+    <div class="hero">
+      <div><span class="lbl">Total P&amp;L (incl. open marks)</span><span class="big" id="hTotal">–</span></div>
+      <div><span class="lbl">Realized</span><span class="sm" id="hReal">–</span></div>
+      <div><span class="lbl">Unrealized</span><span class="sm" id="hUnreal">–</span></div>
+      <div class="legend"><span><i></i>Settled P&amp;L</span><span><i class="dash"></i>Marked to market now</span></div>
+    </div>
+    <div id="plot"><div class="tip" id="tip"></div></div>
+  </section>
+
+  <!-- RIGHT TOP: stats -->
+  <section class="panel" id="stats">
+    <div class="ph"><h2>Performance</h2><span class="meta" id="statMeta"></span></div>
+    <div class="pb">
+      <div class="tiles" id="tiles"></div>
+      <div id="dist"></div>
+      <div class="last" id="lastScan"></div>
+    </div>
+  </section>
+
+  <!-- CENTER BOTTOM: strategy vs shadow + by city -->
+  <section class="panel" id="compare">
+    <div class="ph"><h2>Strategy vs skipped signals</h2><span class="meta" title="signals the filter rejected, tracked as if traded">shadow = skipped signals</span></div>
+    <div class="pb"><div class="cmpwrap">
+      <div><table id="cmp"></table><div class="edge" id="edge"></div></div>
+      <div><div class="sub">Realized P&amp;L by city · strategy</div><div id="cities"></div></div>
+    </div></div>
+  </section>
+
+  <!-- RIGHT BOTTOM: recent trades -->
+  <section class="panel" id="trades">
+    <div class="ph"><h2>Recent trades</h2><span class="meta" id="trMeta"></span></div>
+    <div class="pb"><table>
+      <thead><tr><th>Opened</th><th>Market</th><th class="r">Entry</th><th class="r">Resolves</th><th class="r">P&amp;L</th></tr></thead>
+      <tbody id="trBody"></tbody></table></div>
+  </section>
+</main>
+
+<footer><b>Simulated paper trades for research.</b> No real money is placed. Nothing on this page is betting or investment advice. Market data via public APIs; not affiliated with any exchange.</footer>
+
+<script>
+/* =================== CONFIG =================== */
+const SUPABASE_URL = "https://fqpclrflofisljliqrby.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ZvwBXkdPx2pI6XKNpA9Gkg_RjkxaRtO";          // paste the PUBLISHABLE key (sb_publishable_...) here. Leave empty for demo data.
+const REFRESH_MS   = 60_000;      // reload database every 60 s
+const RECENT_N     = 20;          // rows in "Recent trades"
+const CLOB         = "https://clob.polymarket.com";
+/* ============================================== */
+
+const DEMO = !SUPABASE_KEY;
+const S = { tradeIds:new Set(), trades:[], shadow:[], signals:[], live:{}, liveOk:null, range:0, sigF:"all", seen:new Set(), lastLoad:null };
+const $ = id => document.getElementById(id);
+
+/* ---------- formatting ---------- */
+const usd = (v,sign=true)=> v==null||isNaN(v) ? "–" : (sign&&v>0?"+":v<0?"−":"")+"$"+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = (v,sign=true)=> v==null||isNaN(v) ? "–" : (sign&&v>0?"+":v<0?"−":"")+Math.abs(v*100).toFixed(1)+"%";
+const cls = v => v>0?"up":v<0?"down":"";
+const cents = p => p==null?"–":Math.round(p*100)+"¢";
+const pad = n => String(n).padStart(2,"0");
+const fmtT = d => `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+const fmtD = d => `${d.toLocaleString("en-GB",{month:"short",timeZone:"UTC"})} ${d.getUTCDate()}`;
+const fmtDT = d => `${fmtD(d)} ${fmtT(d)}`;
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function ago(d){const m=Math.round((Date.now()-d)/60000);return m<1?"just now":m<60?m+"m ago":m<1440?Math.floor(m/60)+"h "+(m%60)+"m ago":Math.floor(m/1440)+"d ago"}
+function until(d){if(!d)return"–";const m=Math.round((d-Date.now())/60000);if(m<=0)return"resolving";return m<60?m+"m":m<1440?Math.floor(m/60)+"h "+pad(m%60)+"m":Math.floor(m/1440)+"d "+Math.floor(m%1440/60)+"h"}
+
+/* "Will the highest temperature in Tokyo be 12°C on November 13?" -> {city, kind, band, day} */
+function parseQ(r){
+  const q=r.question||"";
+  const city=(r.city&&r.city!=="unknown")?r.city:((q.match(/ in (.+?) be /)||[])[1]||"–");
+  const kind=/highest/i.test(q)?"High":/lowest/i.test(q)?"Low":"";
+  const band=((q.match(/ be (.+?) on /)||[])[1]||"").replace(/^between /,"");
+  const day=((q.match(/ on ([A-Z][a-z]+ \d+)/)||[])[1]||"").replace(/^(\w{3})\w*/,"$1");
+  return {city,kind,band,day,label:`${kind} ${band}${day?" · "+day:""}`.trim()};
+}
+
+/* ---------- data loading ---------- */
+async function sb(path,extraHeaders={}){
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{headers:{apikey:SUPABASE_KEY,...extraHeaders}});
+  if(!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return {rows:await r.json(), range:r.headers.get("content-range")};
+}
+async function sbAll(table,select,extra=""){
+  let out=[],off=0;
+  for(;;){const {rows}=await sb(`${table}?select=${select}${extra}&limit=1000&offset=${off}`);out=out.concat(rows);if(rows.length<1000)break;off+=1000;}
+  return out;
+}
+/* Egress budget (free plan = 5 GB/month), per open tab:
+   trades: ~120 small rows every minute
+   shadow: only settled rows, only every 10 minutes, plus a row count
+   signals: only rows newer than the ones already on screen */
+async function load(){
+  if(DEMO){ if(!S.trades.length) Object.assign(S,makeDemo()); S.lastLoad=new Date(); return; }
+  // trades: full load once, then only rows changed since the newest change we have
+  const cols="market_id,opened_at,question,city,underdog_side,price,stake,shares,status,pnl,settled_at,token_id,end_date,mark_price,marked_at,updated_at";
+  const since=S.trades.reduce((m,t)=>[t.updated_at,t.marked_at,m].filter(Boolean).sort().pop(),"");
+  const jobs=[since
+    ? sbAll("trades",cols,`&or=(updated_at.gt.${encodeURIComponent(since)},marked_at.gt.${encodeURIComponent(since)})`)
+    : sbAll("trades",cols,"&order=opened_at.desc")];
+  const needShadow=!S.shadowAt||Date.now()-S.shadowAt>10*60000;
+  if(needShadow) jobs.push(
+    sbAll("shadow_trades","status,pnl,stake","&status=eq.settled"),
+    sb("shadow_trades?select=market_id&limit=1",{Prefer:"count=exact"}));
+  const newest=S.signals[0]?.seen_at;
+  const sigP=sb(`signals?select=seen_at,market_id,question,city,band,underdog_ask,decision,reason&order=seen_at.desc&limit=200${newest?`&seen_at=gt.${encodeURIComponent(newest)}`:""}`);
+  const [t,...rest]=await Promise.all(jobs);
+  const sg=(await sigP).rows;
+  if(since){const by=new Map(S.trades.map(r=>[r.market_id+"|"+r.opened_at,r]));
+    t.forEach(r=>by.set(r.market_id+"|"+r.opened_at,r)); S.trades=[...by.values()];}
+  else S.trades=t;
+  if(needShadow){
+    const [settled,cnt]=rest, total=+((cnt.range||"").split("/")[1]||settled.length);
+    S.shadow=settled.concat(Array(Math.max(0,total-settled.length)).fill({status:"open"}));
+    S.shadowAt=Date.now();
+  }
+  S.signals=sg.concat(S.signals).slice(0,300);
+  S.lastLoad=new Date();
+}
+/* live midpoints for open strategy trades, straight from the public order book */
+async function loadMarks(){
+  const ids=[...new Set(S.trades.filter(t=>t.status==="open"&&t.token_id).map(t=>t.token_id))];
+  if(DEMO||!ids.length||S.liveOk===false) return;
+  const put=j=>{for(const [k,v] of Object.entries(j||{})) if(v!=null&&!isNaN(+v)) S.live[k]=+v;};
+  const tries=[
+    async ch=>{const r=await fetch(`${CLOB}/midpoints?token_ids=${ch.join(",")}`);if(!r.ok)throw new Error("GET midpoints "+r.status);put(await r.json());},
+    async ch=>{const r=await fetch(`${CLOB}/midpoints`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(ch.map(token_id=>({token_id})))});if(!r.ok)throw new Error("POST midpoints "+r.status);put(await r.json());},
+  ];
+  for(const tryFn of (S.markMode!=null?[tries[S.markMode]]:tries)){
+    try{ for(let i=0;i<ids.length;i+=25) await tryFn(ids.slice(i,i+25));
+      S.markMode=tries.indexOf(tryFn); S.liveOk=true; return; }
+    catch(e){ console.warn("[marks] live prices unavailable:",e.message||e); }
+  }
+  S.liveOk=false; S.markMode=null;
+}
+/* ---------- derived numbers ---------- */
+const markOf = t => (t.token_id&&S.live[t.token_id]!=null)?S.live[t.token_id]:(t.mark_price??t.price);
+const unrealOf = t => (t.shares||0)*markOf(t)-(t.stake||0);
+const settledOf = arr => arr.filter(t=>t.status==="settled"&&t.pnl!=null);
+
+function bookStats(arr){
+  const st=settledOf(arr), open=arr.filter(t=>t.status==="open");
+  const pnl=st.reduce((a,t)=>a+ +t.pnl,0), stake=st.reduce((a,t)=>a+ +t.stake,0);
+  const wins=st.filter(t=>t.pnl>0).length;
+  return {n:arr.length,settled:st.length,open:open.length,wins,win:st.length?wins/st.length:null,pnl,roi:stake?pnl/stake:null};
+}
+function stats(){
+  const b=bookStats(S.trades);
+  const st=settledOf(S.trades).sort((a,b)=>new Date(a.settled_at)-new Date(b.settled_at));
+  let cum=0,peak=0,dd=0,cur=0,maxL=0;
+  const rets=[];
+  for(const t of st){cum+= +t.pnl;peak=Math.max(peak,cum);dd=Math.min(dd,cum-peak);
+    if(t.pnl<0){cur++;maxL=Math.max(maxL,cur)}else cur=0; rets.push(t.pnl/t.stake);}
+  // skewness of per-trade returns (pnl / stake), settled trades only
+  // adjusted Fisher-Pearson sample skewness G1 (same as Excel SKEW, pandas .skew())
+  const n=rets.length, mean=rets.reduce((a,x)=>a+x,0)/(n||1);
+  const m2=rets.reduce((a,x)=>a+(x-mean)**2,0)/(n||1), m3=rets.reduce((a,x)=>a+(x-mean)**3,0)/(n||1);
+  const skew=n>=3&&m2>0 ? Math.sqrt(n*(n-1))/(n-2)*m3/m2**1.5 : null;
+  const skewSE=n>=3 ? Math.sqrt(6*n*(n-1)/((n-2)*(n+1)*(n+3))) : null;
+  // edge vs price: each trade's buy price is the market-implied win probability
+  const expW=st.reduce((a,t)=>a+ +t.price,0), varW=st.reduce((a,t)=>a+t.price*(1-t.price),0);
+  const wins=st.filter(t=>t.pnl>0).length;
+  const edge=n?(wins-expW)/n:null, edgeSE=n?Math.sqrt(varW)/n:null, edgeZ=varW?(wins-expW)/Math.sqrt(varW):null;
+  const W=st.filter(t=>t.pnl>0), L=st.filter(t=>t.pnl<0);
+  const payoff=W.length&&L.length?(W.reduce((a,t)=>a+ +t.pnl,0)/W.length)/Math.abs(L.reduce((a,t)=>a+ +t.pnl,0)/L.length):null;
+  const open=S.trades.filter(t=>t.status==="open");
+  const unreal=open.reduce((a,t)=>a+unrealOf(t),0);
+  const avgEntry=S.trades.length?S.trades.reduce((a,t)=>a+ +t.price,0)/S.trades.length:null;
+  return {...b,dd,peak,curL:cur,maxL,skew,skewSE,skewN:n,rets,edge,edgeSE,edgeZ,implied:n?expW/n:null,payoff,unreal,exposure:open.reduce((a,t)=>a+ +t.stake,0),avgEntry,series:st};
+}
+
+/* ---------- render: header ---------- */
+function renderStatus(){
+  const lastSig=S.signals[0]?new Date(S.signals[0].seen_at):null;
+  const age=lastSig?(Date.now()-lastSig)/60000:Infinity;
+  $("dot").className="dot "+(age<75?"live":"stale");
+  $("feed").textContent=lastSig?(age<75?"LIVE · last scan "+ago(lastSig):"SCANNER OFFLINE · last scan "+ago(lastSig)):"waiting for first scan";
+  const mk=S.trades.filter(t=>t.status==="open"&&t.marked_at).map(t=>+new Date(t.marked_at));
+  $("marks").textContent=DEMO?"":S.liveOk===true?"marks: live order book":mk.length?"marks: "+ago(Math.max(...mk)):"";
+  $("demo").hidden=!DEMO;
+}
+
+/* taken = decision says so (any spelling), or a strategy trade exists for that market */
+function isTaken(sg){
+  if(/^(tak|buy|bought|trade)/i.test(sg.decision||"")) return true;
+  if(/^skip/i.test(sg.decision||"") && !/passed/i.test(sg.reason||"")) return false;
+  return S.tradeIds.has(sg.market_id) && !/already/i.test(sg.reason||"");
+}
+/* ---------- render: scanner feed ---------- */
+function renderSignals(){
+  S.tradeIds=new Set(S.trades.map(t=>t.market_id));
+  const rows=S.signals.filter(s=>S.sigF==="all"||(S.sigF==="TAKEN")===isTaken(s)).slice(0,150);
+  const first=!S.seen.size;
+  $("sigList").innerHTML=rows.map(s=>{
+    const p=parseQ(s), k=s.market_id+s.seen_at, isNew=!first&&!S.seen.has(k);
+    const t=isTaken(s);
+    return `<div class="sig ${t?"t":"s"}${isNew?" new":""}" title="${esc(s.question)}">
+      <span class="tm">${fmtT(new Date(s.seen_at))}</span>
+      <span class="nm">${esc(p.city)} <span class="ink2">${esc(p.label)}</span></span>
+      <span class="tag ${t?"taken":"skip"}">${t?"TAKEN":"SKIP"}</span>
+      <span class="rs">${esc(s.band||"")} · ask ${cents(s.underdog_ask)} · ${esc(s.reason||"")}</span></div>`;
+  }).join("")||`<div class="sig"><span class="rs">No signals yet</span></div>`;
+  S.signals.forEach(s=>S.seen.add(s.market_id+s.seen_at));
+  const taken=S.signals.filter(isTaken).length;
+  $("sigMeta").textContent=`${taken}/${S.signals.length}`;$("sigMeta").title="taken / recent signals";
+}
+
+/* ---------- render: stats ---------- */
+function renderStats(x){
+  const tiles=[
+    ["Win rate",pct(x.win,false),`${x.wins} of ${x.settled}`,""],
+    ["Edge, pts",x.edge==null?"–":(x.edge>0?"+":x.edge<0?"−":"")+Math.abs(x.edge*100).toFixed(1),x.edge==null?"no settled trades":`±${(x.edgeSE*100).toFixed(1)} · px ${Math.round(x.implied*100)}%`,cls(x.edge)],
+    ["ROI",pct(x.roi),"on stake",cls(x.roi)],
+    ["Drawdown",usd(x.dd).replace(/\.\d\d$/,""),`peak +$${Math.round(x.peak)}`,x.dd<0?"down":""],
+    ["Loss run",String(x.curL),`max ${x.maxL}`,x.curL>=3?"down":""],
+
+    ["Payoff",x.payoff==null?"–":x.payoff.toFixed(2)+"×","win ÷ loss",""],
+    ["Open",String(x.open),`$${Math.round(x.exposure)} risk`,""],
+    ["Skewness",x.skew==null?"–":(x.skew>0?"+":x.skew<0?"−":"")+Math.abs(x.skew).toFixed(2),x.skew==null?"needs 3+ settled":`±${x.skewSE.toFixed(2)} · n=${x.skewN}`,""],
+  ];
+  $("tiles").innerHTML=tiles.map(([k,v,s,c])=>`<div class="tile" title="${k}: ${s}"><div class="k">${k}</div><div class="v ${c}">${v}</div><div class="s">${s}</div></div>`).join("");
+  $("statMeta").textContent=`${x.n} trades`;
+  $("dist").innerHTML=renderDist(x);
+
+  // latest scan summary: signals sharing the newest scan hour
+  if(!S.signals.length){$("lastScan").innerHTML="";return;}
+  const t0=new Date(S.signals[0].seen_at), batch=S.signals.filter(s=>t0-new Date(s.seen_at)<20*60000);
+  const tk=batch.filter(isTaken).length, sk=batch.length-tk;
+  const reasons={};batch.filter(s=>!isTaken(s)).forEach(s=>{const r=(s.reason||"other").replace(/[\d.]+/g,"").replace(/[\s+]+$/,"").replace(/\s+/g," ");reasons[r]=(reasons[r]||0)+1});
+  const top=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  $("lastScan").innerHTML=`<h3>Last scan · ${fmtDT(t0)} UTC</h3>
+    <div><span class="up">${tk} taken</span> <span class="muted">·</span> <span class="down">${sk} skipped</span> <span class="muted">of ${batch.length} signals</span></div>
+    <div class="bar"><span style="flex:${tk};background:var(--up)"></span><span style="flex:${sk};background:var(--down);opacity:.75"></span></div>
+    ${top.map(([r,n])=>`<div class="muted" style="font-size:11px">${n}× ${esc(r)}</div>`).join("")}`;
+}
+
+
+/* ---------- render: return distribution + skew after each settlement ---------- */
+function g1(r){const n=r.length;if(n<3)return null;const m=r.reduce((a,x)=>a+x,0)/n;
+  const m2=r.reduce((a,x)=>a+(x-m)**2,0)/n,m3=r.reduce((a,x)=>a+(x-m)**3,0)/n;
+  return m2>0?Math.sqrt(n*(n-1))/(n-2)*m3/m2**1.5:null}
+function renderDist(x){
+  const r=x.rets; if(r.length<3) return `<div class="dist"><h3>Return distribution<span>needs 3+ settled trades</span></h3></div>`;
+  const W=Math.max(200,($("dist").clientWidth||300)-24), H=96, m={l:26,r:6,t:6,b:16};
+  // histogram of per-trade returns, 25-pt bins from -100%
+  const bw=.25, lo=-1, hi=Math.max(.25,Math.ceil(Math.max(...r)/bw)*bw+1e-9);
+  const nb=Math.round((hi-lo)/bw), bins=Array(nb).fill(0);
+  r.forEach(v=>bins[Math.min(nb-1,Math.max(0,Math.floor((v-lo)/bw+1e-9)))]++);
+  const top=Math.max(...bins), X=v=>m.l+(v-lo)/(hi-lo)*(W-m.l-m.r), Y=c=>m.t+(1-c/top)*(H-m.t-m.b);
+  let h="";
+  bins.forEach((c,i)=>{if(!c)return;const x0=X(lo+i*bw)+1,x1=X(lo+(i+1)*bw)-1;
+    h+=`<rect x="${x0}" y="${Y(c)}" width="${Math.max(1,x1-x0)}" height="${H-m.b-Y(c)}" rx="2" fill="var(--dist)"><title>${Math.round((lo+i*bw)*100)}% to ${Math.round((lo+(i+1)*bw)*100)}%: ${c} trade${c>1?"s":""}</title></rect>`});
+  const mean=r.reduce((a,v)=>a+v,0)/r.length;
+  let ax=`<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" stroke="#2a3441"/>`;
+  const lstep=[1,2,4,5,10].find(st=>(X(st)-X(0))>=56)||10;
+  for(const v of Array.from({length:Math.floor(hi/lstep)+2},(_,i)=>i===0?-1:(i-1)*lstep).filter(v=>v<=hi)) [v].forEach(v=>ax+=`<text x="${Math.min(X(v),W-m.r-18)}" y="${H-3}" fill="#5f6b79" font-size="10" text-anchor="middle">${v>0?"+":""}${v*100}%</text>`);
+  ax+=`<text x="${m.l-5}" y="${Y(top)+8}" fill="#5f6b79" font-size="10" text-anchor="end">${top}</text>`;
+  ax+=`<line x1="${X(mean)}" x2="${X(mean)}" y1="${m.t}" y2="${H-m.b}" stroke="#d7dee7" stroke-dasharray="2 3"/><text x="${X(mean)+4}" y="${m.t+9}" fill="#9aa6b4" font-size="10">mean ${pct(mean)}</text>`;
+
+  // expanding skew: G1 recomputed after each settled trade, with ±2 SE band
+  const H2=64, s=[], n0=3;
+  for(let k=n0;k<=r.length;k++){const g=g1(r.slice(0,k));if(g!=null)s.push({k,g,se:Math.sqrt(6*k*(k-1)/((k-2)*(k+1)*(k+3)))})}
+  let sp="";
+  if(s.length>1){
+    const ylo=Math.min(-1,...s.map(p=>p.g-2*p.se)), yhi=Math.max(1,...s.map(p=>p.g+2*p.se));
+    const XX=k=>m.l+(k-n0)/((r.length-n0)||1)*(W-m.l-m.r), YY=v=>4+(yhi-v)/(yhi-ylo)*(H2-18);
+    const band=s.map(p=>`${XX(p.k)},${YY(p.g+2*p.se)}`).join(" ")+" "+s.slice().reverse().map(p=>`${XX(p.k)},${YY(p.g-2*p.se)}`).join(" ");
+    const last=s[s.length-1];
+    sp=`<svg viewBox="0 0 ${W} ${H2}" height="${H2}">
+      <polygon points="${band}" fill="rgba(30,155,240,.13)"/>
+      <line x1="${m.l}" x2="${W-m.r}" y1="${YY(0)}" y2="${YY(0)}" stroke="#3a4655"/>
+      <text x="${m.l-5}" y="${YY(0)+3}" fill="#5f6b79" font-size="10" text-anchor="end">0</text>
+      <polyline points="${s.map(p=>`${XX(p.k)},${YY(p.g)}`).join(" ")}" fill="none" stroke="var(--dist)" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="${XX(last.k)}" cy="${YY(last.g)}" r="4" fill="var(--dist)" stroke="#0d1117" stroke-width="2"/>
+      <text x="${m.l}" y="${H2-2}" fill="#5f6b79" font-size="10">trade #${n0}</text>
+      <text x="${W-m.r}" y="${H2-2}" fill="#5f6b79" font-size="10" text-anchor="end">#${r.length} · band = ±2 std err</text>
+    </svg>`;
+  }
+  return `<div class="dist"><h3>Return per settled trade<span>${r.length} trades</span></h3>
+    <svg viewBox="0 0 ${W} ${H}" height="${H}">${ax}${h}</svg>
+    <h3 style="margin-top:6px">Skewness after each settlement<span>now ${x.skew>0?"+":""}${x.skew.toFixed(2)} ± ${x.skewSE.toFixed(2)}</span></h3>${sp}</div>`;
+}
+
+/* ---------- render: recent trades ---------- */
+function renderTrades(){
+  const rows=[...S.trades].sort((a,b)=>new Date(b.opened_at)-new Date(a.opened_at)).slice(0,RECENT_N);
+  $("trBody").innerHTML=rows.map(t=>{
+    const p=parseQ(t), open=t.status==="open";
+    const v=open?unrealOf(t):+t.pnl;
+    const end=t.end_date?new Date(t.end_date):null;
+    return `<tr title="${esc(t.question)}">
+      <td class="muted">${new Date(t.opened_at).getUTCDate()} ${fmtT(new Date(t.opened_at))}</td>
+      <td class="ev">${esc(p.city)} <span class="ink2">${esc(p.label)}</span> <span class="muted">${t.underdog_side==2?"NO":"YES"}</span></td>
+      <td class="r">${cents(t.price)}</td>
+      <td class="r ${open?"":"muted"}">${open?until(end):"settled"}</td>
+      <td class="r ${cls(v)}">${open?"<span class='muted'>≈</span>":""}${usd(v)}</td></tr>`;
+  }).join("");
+  $("trMeta").textContent="≈ = marked to market";
+}
+
+/* ---------- render: strategy vs shadow + cities ---------- */
+function renderCompare(x){
+  const s=bookStats(S.shadow);
+  const row=(name,b)=>`<tr><td>${name}</td><td class="r">${b.settled}</td><td class="r">${pct(b.win,false)}</td><td class="r ${cls(b.roi)}">${pct(b.roi)}</td><td class="r ${cls(b.pnl)}">${usd(b.pnl)}</td></tr>`;
+  $("cmp").innerHTML=`<thead><tr><th>Book</th><th class="r">Settled</th><th class="r">Win</th><th class="r">ROI</th><th class="r">Realized</th></tr></thead>
+    <tbody>${row("Strategy",x)}${row("Shadow",s)}</tbody>`;
+  const edge=(x.roi!=null&&s.roi!=null)?x.roi-s.roi:null;
+  $("edge").innerHTML=edge==null?"":`Filter edge: strategy ROI is <b class="${cls(edge)}">${pct(edge)}</b> vs the signals it skipped.`;
+
+  const by={};settledOf(S.trades).forEach(t=>{const c=parseQ(t).city;by[c]=(by[c]||0)+ +t.pnl});
+  const list=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+  const max=Math.max(1,...list.map(e=>Math.abs(e[1])));
+  $("cities").innerHTML=list.map(([c,v])=>{
+    const w=Math.abs(v)/max*50;
+    return `<div class="city" title="${esc(c)} ${usd(v)}"><span class="nm">${esc(c)}</span>
+      <div class="track"><span class="zero"></span><span class="b" style="${v>=0?`left:50%`:`left:${50-w}%`};width:${Math.max(w,.6)}%;background:var(${v>=0?"--up":"--down"})"></span></div>
+      <span class="r ${cls(v)}">${usd(v)}</span></div>`;
+  }).join("")||`<div class="sub">No settled trades yet</div>`;
+}
+
+/* ---------- render: P&L chart (SVG) ---------- */
+function renderChart(x){
+  const real=x.series.reduce((a,t)=>a+ +t.pnl,0), total=real+x.unreal;
+  $("hTotal").textContent=usd(total);$("hTotal").className="big "+cls(total);
+  $("hReal").textContent=usd(real);$("hReal").className="sm "+cls(real);
+  $("hUnreal").textContent=usd(x.unreal);$("hUnreal").className="sm "+cls(x.unreal);
+
+  const host=$("plot"), W=host.clientWidth, H=host.clientHeight;
+  if(W<50||H<50) return;
+  const m={l:58,r:16,t:14,b:26};
+  // points: start at first trade open with 0, then each settlement
+  const first=S.trades.length?Math.min(...S.trades.map(t=>+new Date(t.opened_at))):Date.now();
+  let cum=0;
+  const pts=[{t:first,v:0}].concat(x.series.map(t=>({t:+new Date(t.settled_at),v:(cum+= +t.pnl),tr:t})));
+  const now={t:Date.now(),v:total,live:true};
+  const from=S.range?Date.now()-S.range*864e5:first;
+  const vis=pts.filter(p=>p.t>=from);
+  const before=pts.filter(p=>p.t<from).pop();
+  if(before) vis.unshift({t:from,v:before.v});
+  const all=vis.concat([now]);
+  const t0=Math.min(...all.map(p=>p.t)), t1=Math.max(...all.map(p=>p.t));
+  let lo=Math.min(0,...all.map(p=>p.v)), hi=Math.max(0,...all.map(p=>p.v));
+  const padv=(hi-lo||10)*.1; lo-=padv; hi+=padv;
+  const X=t=>m.l+(t-t0)/((t1-t0)||1)*(W-m.l-m.r);
+  const Y=v=>m.t+(hi-v)/(hi-lo)*(H-m.t-m.b);
+  // nice y ticks
+  const step=(()=>{const r=(hi-lo)/5,p=10**Math.floor(Math.log10(r)),n=r/p;return (n<1.5?1:n<3?2:n<7?5:10)*p})();
+  let g="";
+  for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step){const y=Y(v);
+    g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="${Math.abs(v)<1e-9?"#3a4655":"#161d26"}" ${Math.abs(v)<1e-9?"":'stroke-dasharray="2 4"'}/>`+
+       `<text x="${m.l-8}" y="${y+4}" fill="#5f6b79" font-size="11" text-anchor="end">${usd(v).replace(".00","")}</text>`;}
+  // x ticks: ~6 dates
+  const span=t1-t0, nT=Math.max(2,Math.floor((W-m.l-m.r)/110));
+  for(let i=0;i<=nT;i++){const t=t0+span*i/nT;
+    g+=`<text x="${X(t)}" y="${H-8}" fill="#5f6b79" font-size="11" text-anchor="${i===0?"start":i===nT?"end":"middle"}">${span<4*864e5?fmtDT(new Date(t)):fmtD(new Date(t))}</text>`;}
+  // step line: P&L only changes at settlement
+  let d="";vis.forEach((p,i)=>{d+=i?`H${X(p.t)}V${Y(p.v)}`:`M${X(p.t)},${Y(p.v)}`});
+  const lastV=vis.length?vis[vis.length-1]:{t:t0,v:0};
+  const z=Y(0);
+  const area=d?`${d}H${X(now.t)}V${z}H${X(vis[0].t)}Z`:"";
+  const mk=vis.filter(p=>p.tr).map(p=>`<circle cx="${X(p.t)}" cy="${Y(p.v)}" r="3.5" fill="${p.tr.pnl>0?"#19c5a5":"#f25f5c"}" stroke="#0d1117" stroke-width="2"/>`).join("");
+  host.querySelector("svg")?.remove();
+  host.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 ${W} ${H}">
+    <defs>
+      <clipPath id="ca"><rect x="0" y="0" width="${W}" height="${z}"/></clipPath>
+      <clipPath id="cb"><rect x="0" y="${z}" width="${W}" height="${H}"/></clipPath>
+    </defs>
+    ${g}
+    <path d="${area}" fill="rgba(25,197,165,.12)" clip-path="url(#ca)"/>
+    <path d="${area}" fill="rgba(242,95,92,.12)" clip-path="url(#cb)"/>
+    <path d="${d}H${X(now.t)}" fill="none" stroke="#d7dee7" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M${X(now.t)},${Y(lastV.v)}V${Y(now.v)}" fill="none" stroke="#e8b04b" stroke-width="2" stroke-dasharray="4 3"/>
+    ${mk}
+    <circle cx="${X(now.t)}" cy="${Y(now.v)}" r="5" fill="#e8b04b" stroke="#0d1117" stroke-width="2"/>
+    <text x="${X(now.t)-9}" y="${Y(now.v)-10}" fill="#e8b04b" font-size="11" text-anchor="end">now ${usd(now.v)}</text>
+    <line id="xh" y1="${m.t}" y2="${H-m.b}" stroke="#5f6b79" stroke-dasharray="3 3" visibility="hidden"/>
+    <circle id="xd" r="5" fill="none" stroke="#fff" stroke-width="2" visibility="hidden"/>
+    <rect x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent" id="hit"/>
+  </svg>`);
+  // crosshair + tooltip: snap to nearest settlement (or "now")
+  const hp=vis.filter(p=>p.tr).concat([now]);
+  const svg=host.querySelector("svg"), tip=$("tip");
+  $("hit").onmousemove=e=>{
+    const bx=svg.getBoundingClientRect(), mx=e.clientX-bx.left;
+    let best=hp[0],bd=1e9;hp.forEach(p=>{const dd=Math.abs(X(p.t)-mx);if(dd<bd){bd=dd;best=p}});
+    const px=X(best.t),py=Y(best.v);
+    svg.querySelector("#xh").setAttribute("x1",px);svg.querySelector("#xh").setAttribute("x2",px);svg.querySelector("#xh").setAttribute("visibility","visible");
+    const c=svg.querySelector("#xd");c.setAttribute("cx",px);c.setAttribute("cy",py);c.setAttribute("visibility","visible");
+    tip.innerHTML=best.live
+      ? `<b>Now</b> · marked to market<br>Cumulative <b class="${cls(best.v)}">${usd(best.v)}</b><br><span class="muted">${x.open} open trades, unrealized ${usd(x.unreal)}</span>`
+      : `<b>${fmtDT(new Date(best.t))} UTC</b><br>Cumulative <b class="${cls(best.v)}">${usd(best.v)}</b><br>This trade <b class="${cls(best.tr.pnl)}">${usd(+best.tr.pnl)}</b> · entry ${cents(best.tr.price)}<div class="q">${esc(best.tr.question)}</div>`;
+    tip.style.display="block";
+    const tw=tip.offsetWidth;tip.style.left=Math.min(Math.max(px+14,0),W-tw-4)+"px";
+    if(px+14+tw>W) tip.style.left=Math.max(px-tw-14,0)+"px";
+    tip.style.top=Math.max(4,Math.min(py-20,H-tip.offsetHeight-4))+"px";
+  };
+  $("hit").onmouseleave=()=>{tip.style.display="none";svg.querySelector("#xh").setAttribute("visibility","hidden");svg.querySelector("#xd").setAttribute("visibility","hidden")};
+}
+
+/* ---------- main loop ---------- */
+function renderAll(){
+  const x=stats();
+  renderStatus();renderSignals();renderStats(x);renderTrades();renderCompare(x);renderChart(x);
+}
+async function tick(){
+  try{ await load(); await loadMarks(); renderAll(); }
+  catch(e){ console.error(e); $("dot").className="dot err"; $("feed").textContent="database unreachable · retrying"; }
+}
+$("range").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.range=+b.dataset.r;[...$("range").children].forEach(c=>c.classList.toggle("on",c===b));renderChart(stats())};
+$("sigFilter").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.sigF=b.dataset.f;[...$("sigFilter").children].forEach(c=>c.classList.toggle("on",c===b));renderSignals()};
+new ResizeObserver(()=>S.lastLoad&&renderChart(stats())).observe($("plot"));
+new ResizeObserver(()=>{if(S.lastLoad)$("dist").innerHTML=renderDist(stats())}).observe($("stats"));
+setInterval(()=>{const d=new Date();$("clock").textContent=`${fmtD(d)} ${fmtT(d)}:${pad(d.getUTCSeconds())} UTC`},1000);
+setInterval(()=>S.lastLoad&&(renderStatus(),renderTrades()),30_000);
+tick(); setInterval(tick,REFRESH_MS);
+
+/* ---------- demo data (only used when SUPABASE_KEY is empty) ---------- */
+function makeDemo(){
+  const cities=["Tokyo","Paris","Ankara","Kuala Lumpur","New York City","Seoul (Incheon)","Lucknow","London","Mexico City","Sao Paulo"];
+  let seed=7;const rnd=()=>((seed=seed*16807%2147483647)/2147483647);
+  const H=3600e3, now=Date.now(), trades=[], signals=[], shadow=[];
+  for(let i=0;i<108;i++){
+    const c=cities[i%cities.length], op=now-(7*24-i*1.5)*H, price=.28+rnd()*.08, sh=20/price;
+    const settled=op<now-30*H, win=rnd()<.4, day=new Date(op+24*H);
+    const q=`Will the ${i%2?"highest":"lowest"} temperature in ${c} be ${10+i%20}°C on ${day.toLocaleString("en-US",{month:"long",timeZone:"UTC"})} ${day.getUTCDate()}?`;
+    trades.push({market_id:String(6900000+i),opened_at:new Date(op).toISOString(),question:q,city:c,underdog_side:1,price:+price.toFixed(2),stake:20,shares:sh,
+      status:settled?"settled":"open",pnl:settled?(win?sh-20:-20):null,settled_at:settled?new Date(op+26*H).toISOString():null,
+      end_date:new Date(op+30*H).toISOString(),mark_price:settled?null:price+(rnd()-.45)*.12});
+  }
+  for(let i=0;i<400;i++){const settled=rnd()<.3;shadow.push({status:settled?"settled":"open",stake:20,pnl:settled?(rnd()<.14?45:-20):null,price:.3,shares:66});}
+  for(let i=0;i<160;i++){const c=cities[i%cities.length],tk=rnd()<.12,day=new Date(now+20*H);
+    signals.push({seen_at:new Date(now-(i*4)*60000-Math.floor(i/40)*H).toISOString(),market_id:String(6950000+i),city:c,band:["70-80c","80-90c","90-95c"][i%3],
+      question:`Will the ${i%2?"highest":"lowest"} temperature in ${c} be ${8+i%22}°C on November ${day.getUTCDate()}?`,underdog_ask:.1+rnd()*.25,
+      decision:tk?"TAKEN":"SKIP",reason:tk?"rule C: pass":["rule C: bucket rank 4","empty book","ask 0.319 > history 0.253 + 0.03","spread 0.31 > 0.10"][i%4]});}
+  return {trades,shadow,signals};
+}
+</script>
+</body>
+</html>
