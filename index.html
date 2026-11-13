@@ -219,7 +219,7 @@ const CLOB         = "https://clob.polymarket.com";
 /* ============================================== */
 
 const DEMO = !SUPABASE_KEY;
-const S = { tradeIds:new Set(), trades:[], shadow:[], signals:[], live:{}, liveOk:null, range:0, sigF:"all", seen:new Set(), lastLoad:null };
+const S = { tradeIds:new Map(), trades:[], shadow:[], signals:[], live:{}, liveOk:null, range:0, sigF:"all", seen:new Set(), lastLoad:null };
 const $ = id => document.getElementById(id);
 
 /* ---------- formatting ---------- */
@@ -273,7 +273,7 @@ async function load(){
     sbAll("shadow_trades","status,pnl,stake","&status=eq.settled"),
     sb("shadow_trades?select=market_id&limit=1",{Prefer:"count=exact"}));
   const newest=S.signals[0]?.seen_at;
-  const sigP=sb(`signals?select=seen_at,market_id,question,city,band,underdog_ask,decision,reason&order=seen_at.desc&limit=200${newest?`&seen_at=gt.${encodeURIComponent(newest)}`:""}`);
+  const sigP=sb(`signals?select=seen_at,market_id,question,city,decision&order=seen_at.desc&limit=200${newest?`&seen_at=gt.${encodeURIComponent(newest)}`:""}`);
   const [t,...rest]=await Promise.all(jobs);
   const sg=(await sigP).rows;
   if(since){const by=new Map(S.trades.map(r=>[r.market_id+"|"+r.opened_at,r]));
@@ -353,12 +353,12 @@ function renderStatus(){
 /* taken = decision says so (any spelling), or a strategy trade exists for that market */
 function isTaken(sg){
   if(/^(tak|buy|bought|trade)/i.test(sg.decision||"")) return true;
-  if(/^skip/i.test(sg.decision||"") && !/passed/i.test(sg.reason||"")) return false;
-  return S.tradeIds.has(sg.market_id) && !/already/i.test(sg.reason||"");
+  const op=S.tradeIds.get(sg.market_id);
+  return op!=null && Math.abs(new Date(sg.seen_at)-op)<15*60000;
 }
 /* ---------- render: scanner feed ---------- */
 function renderSignals(){
-  S.tradeIds=new Set(S.trades.map(t=>t.market_id));
+  S.tradeIds=new Map(S.trades.map(t=>[t.market_id,+new Date(t.opened_at)]));
   const rows=S.signals.filter(s=>S.sigF==="all"||(S.sigF==="TAKEN")===isTaken(s)).slice(0,150);
   const first=!S.seen.size;
   $("sigList").innerHTML=rows.map(s=>{
@@ -368,7 +368,7 @@ function renderSignals(){
       <span class="tm">${fmtT(new Date(s.seen_at))}</span>
       <span class="nm">${esc(p.city)} <span class="ink2">${esc(p.label)}</span></span>
       <span class="tag ${t?"taken":"skip"}">${t?"TAKEN":"SKIP"}</span>
-      <span class="rs">${esc(s.band||"")} · ask ${cents(s.underdog_ask)} · ${esc(s.reason||"")}</span></div>`;
+      </div>`;
   }).join("")||`<div class="sig"><span class="rs">No signals yet</span></div>`;
   S.signals.forEach(s=>S.seen.add(s.market_id+s.seen_at));
   const taken=S.signals.filter(isTaken).length;
@@ -396,12 +396,10 @@ function renderStats(x){
   if(!S.signals.length){$("lastScan").innerHTML="";return;}
   const t0=new Date(S.signals[0].seen_at), batch=S.signals.filter(s=>t0-new Date(s.seen_at)<20*60000);
   const tk=batch.filter(isTaken).length, sk=batch.length-tk;
-  const reasons={};batch.filter(s=>!isTaken(s)).forEach(s=>{const r=(s.reason||"other").replace(/[\d.]+/g,"").replace(/[\s+]+$/,"").replace(/\s+/g," ");reasons[r]=(reasons[r]||0)+1});
-  const top=Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,3);
   $("lastScan").innerHTML=`<h3>Last scan · ${fmtDT(t0)} UTC</h3>
     <div><span class="up">${tk} taken</span> <span class="muted">·</span> <span class="down">${sk} skipped</span> <span class="muted">of ${batch.length} signals</span></div>
     <div class="bar"><span style="flex:${tk};background:var(--up)"></span><span style="flex:${sk};background:var(--down);opacity:.75"></span></div>
-    ${top.map(([r,n])=>`<div class="muted" style="font-size:11px">${n}× ${esc(r)}</div>`).join("")}`;
+`;
 }
 
 
