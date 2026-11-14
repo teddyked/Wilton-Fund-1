@@ -80,6 +80,20 @@ button{font:inherit;color:inherit}
 .hero .big{font:600 30px/1 var(--mono)}
 .hero .lbl{font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:4px}
 .hero .sm{font:500 15px var(--mono)}
+.switch{display:flex;align-items:center;gap:8px;margin-left:auto;cursor:pointer;font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);user-select:none}
+.switch input{display:none}
+.switch .tr{width:34px;height:18px;border-radius:9px;background:var(--line2);position:relative;transition:background .2s}
+.switch .tr::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--ink2);transition:left .2s,background .2s}
+.switch input:checked+.tr{background:rgba(232,176,75,.35)}
+.switch input:checked+.tr::after{left:18px;background:var(--accent)}
+.switch .a{color:var(--ink)}
+.res{font:700 10px var(--sans);letter-spacing:.08em;padding:2px 5px;border-radius:2px}
+.res.w{background:var(--up-bg);color:var(--up);border:1px solid rgba(25,197,165,.45)}
+.res.l{background:var(--down-bg);color:var(--down);border:1px solid rgba(242,95,92,.4)}
+#last5 td.ev{max-width:0;width:100%}
+#last5 td,#last5 th{padding:4px 6px}
+#last5{font-size:12px}
+.edge{padding:6px 10px!important}
 .legend{display:flex;gap:14px;margin-left:auto;color:var(--ink2);font-size:11px;align-self:center}
 .legend i{display:inline-block;width:16px;height:0;border-top:2px solid var(--ink);vertical-align:3px;margin-right:5px}
 .legend i.dash{border-top:2px dashed var(--accent)}
@@ -114,7 +128,7 @@ td.ev{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis}
 tbody tr:hover{background:var(--panel2)}
 
 /* ---------- compare ---------- */
-.cmpwrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:0;height:100%}
+.cmpwrap{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:0;height:100%}
 .cmpwrap>div{min-width:0;overflow-x:hidden;overflow-y:auto}
 #cmp td,#cmp th{padding:5px 6px}
 #cmp{font-size:12px}
@@ -168,13 +182,13 @@ footer b{color:var(--ink2)}
 
   <!-- CENTER TOP: P&L line -->
   <section class="panel" id="chart">
-    <div class="ph"><h2>Strategy P&amp;L · cumulative, USD</h2>
-      <div class="seg" id="range" style="margin-left:auto"><button data-r="7">7D</button><button data-r="30">30D</button><button data-r="0" class="on">All</button></div></div>
+    <div class="ph"><h2 id="chTitle">Strategy P&amp;L · realized, USD</h2>
+      <label class="switch" title="Switch between settled P&L and the live value of open trades"><span id="swL" class="a">Realized</span><input type="checkbox" id="uSw"><span class="tr"></span><span id="swR">Unrealized</span></label></div>
     <div class="hero">
-      <div><span class="lbl">Total P&amp;L (incl. open marks)</span><span class="big" id="hTotal">–</span></div>
-      <div><span class="lbl">Realized</span><span class="sm" id="hReal">–</span></div>
-      <div><span class="lbl">Unrealized</span><span class="sm" id="hUnreal">–</span></div>
-      <div class="legend"><span><i></i>Settled P&amp;L</span><span><i class="dash"></i>Marked to market now</span></div>
+      <div><span class="lbl" id="hL0">Realized P&amp;L</span><span class="big" id="hV0">–</span></div>
+      <div><span class="lbl" id="hL1">Settled trades</span><span class="sm" id="hV1">–</span></div>
+      <div><span class="lbl" id="hL2">ROI</span><span class="sm" id="hV2">–</span></div>
+      <div class="legend"><span id="lgd"><i></i>Cumulative realized P&amp;L</span></div>
     </div>
     <div id="plot"><div class="tip" id="tip"></div></div>
   </section>
@@ -191,9 +205,10 @@ footer b{color:var(--ink2)}
 
   <!-- CENTER BOTTOM: strategy vs shadow + by city -->
   <section class="panel" id="compare">
-    <div class="ph"><h2>Strategy vs skipped signals</h2><span class="meta" title="signals the filter rejected, tracked as if traded">shadow = skipped signals</span></div>
+    <div class="ph"><h2>Strategy summary</h2></div>
     <div class="pb"><div class="cmpwrap">
-      <div><table id="cmp"></table><div class="edge" id="edge"></div></div>
+      <div><table id="cmp"></table><div class="edge" id="edge"></div>
+        <div class="sub">Last 5 settled trades</div><table id="last5"></table></div>
       <div><div class="sub">Realized P&amp;L by city · strategy</div><div id="cities"></div></div>
     </div></div>
   </section>
@@ -202,7 +217,7 @@ footer b{color:var(--ink2)}
   <section class="panel" id="trades">
     <div class="ph"><h2>Recent trades</h2><span class="meta" id="trMeta"></span></div>
     <div class="pb"><table>
-      <thead><tr><th>Opened</th><th>Market</th><th class="r">Entry</th><th class="r">Resolves</th><th class="r">P&amp;L</th></tr></thead>
+      <thead><tr><th>Opened</th><th>Market</th><th class="r">Entry</th><th class="r">Resolves in</th><th class="r">Cost/P&amp;L</th></tr></thead>
       <tbody id="trBody"></tbody></table></div>
   </section>
 </main>
@@ -219,7 +234,7 @@ const CLOB         = "https://clob.polymarket.com";
 /* ============================================== */
 
 const DEMO = !SUPABASE_KEY;
-const S = { tradeIds:new Map(), trades:[], shadow:[], signals:[], live:{}, liveOk:null, range:0, sigF:"all", seen:new Set(), lastLoad:null };
+const S = { snaps:[], showUnreal:false, tradeIds:new Map(), trades:[], shadow:[], signals:[], live:{}, liveOk:null, range:0, sigF:"all", seen:new Set(), lastLoad:null };
 const $ = id => document.getElementById(id);
 
 /* ---------- formatting ---------- */
@@ -274,7 +289,10 @@ async function load(){
     sb("shadow_trades?select=market_id&limit=1",{Prefer:"count=exact"}));
   const newest=S.signals[0]?.seen_at;
   const sigP=sb(`signals?select=seen_at,market_id,question,city,decision&order=seen_at.desc&limit=200${newest?`&seen_at=gt.${encodeURIComponent(newest)}`:""}`);
+  const lastSnap=S.snaps.length?S.snaps[S.snaps.length-1].ts:null;
+  const snapP=sb(`pnl_snapshots?select=ts,unrealized,open_count&order=ts.asc&limit=5000${lastSnap?`&ts=gt.${encodeURIComponent(lastSnap)}`:""}`).catch(()=>({rows:[]}));
   const [t,...rest]=await Promise.all(jobs);
+  S.snaps=S.snaps.concat((await snapP).rows);
   const sg=(await sigP).rows;
   if(since){const by=new Map(S.trades.map(r=>[r.market_id+"|"+r.opened_at,r]));
     t.forEach(r=>by.set(r.market_id+"|"+r.opened_at,r)); S.trades=[...by.values()];}
@@ -454,16 +472,16 @@ function renderTrades(){
   const rows=[...S.trades].sort((a,b)=>new Date(b.opened_at)-new Date(a.opened_at)).slice(0,RECENT_N);
   $("trBody").innerHTML=rows.map(t=>{
     const p=parseQ(t), open=t.status==="open";
-    const v=open?unrealOf(t):+t.pnl;
+    const v=+t.pnl;
     const end=t.end_date?new Date(t.end_date):null;
     return `<tr title="${esc(t.question)}">
       <td class="muted">${new Date(t.opened_at).getUTCDate()} ${fmtT(new Date(t.opened_at))}</td>
       <td class="ev">${esc(p.city)} <span class="ink2">${esc(p.label)}</span> <span class="muted">${t.underdog_side==2?"NO":"YES"}</span></td>
       <td class="r">${cents(t.price)}</td>
       <td class="r ${open?"":"muted"}">${open?until(end):"settled"}</td>
-      <td class="r ${cls(v)}">${open?"<span class='muted'>≈</span>":""}${usd(v)}</td></tr>`;
+      <td class="r ${open?"muted":cls(v)}">${open?usd(+t.stake,false):usd(v)}</td></tr>`;
   }).join("");
-  $("trMeta").textContent="≈ = marked to market";
+  $("trMeta").textContent="grey = cost of open trade";
 }
 
 /* ---------- render: strategy vs shadow + cities ---------- */
@@ -471,7 +489,14 @@ function renderCompare(x){
   const s=bookStats(S.shadow);
   const row=(name,b)=>`<tr><td>${name}</td><td class="r">${b.settled}</td><td class="r">${pct(b.win,false)}</td><td class="r ${cls(b.roi)}">${pct(b.roi)}</td><td class="r ${cls(b.pnl)}">${usd(b.pnl)}</td></tr>`;
   $("cmp").innerHTML=`<thead><tr><th>Book</th><th class="r">Settled</th><th class="r">Win</th><th class="r">ROI</th><th class="r">Realized</th></tr></thead>
-    <tbody>${row("Strategy",x)}${row("Shadow",s)}</tbody>`;
+    <tbody>${row("Strategy",x)}</tbody>`;
+  const l5=settledOf(S.trades).sort((a,b)=>new Date(b.settled_at)-new Date(a.settled_at)).slice(0,5);
+  $("last5").innerHTML=`<thead><tr><th>Settled</th><th>Market</th><th class="r">Entry</th><th class="r">Result</th><th class="r">P&amp;L</th></tr></thead><tbody>`+
+    (l5.map(t=>{const p=parseQ(t),d=new Date(t.settled_at),w=t.pnl>0;
+      return `<tr title="${esc(t.question)}"><td class="muted">${d.getUTCDate()} ${fmtT(d)}</td>
+        <td class="ev">${esc(p.city)} <span class="ink2">${esc(p.label)}</span></td>
+        <td class="r">${cents(t.price)}</td><td class="r"><span class="res ${w?"w":"l"}">${w?"WIN":"LOSS"}</span></td>
+        <td class="r ${cls(+t.pnl)}">${usd(+t.pnl)}</td></tr>`}).join("")||`<tr><td colspan="5" class="muted">No settled trades yet</td></tr>`)+`</tbody>`;
   const edge=(x.roi!=null&&s.roi!=null)?x.roi-s.roi:null;
   $("edge").innerHTML=edge==null?"":`Filter edge: strategy ROI is <b class="${cls(edge)}">${pct(edge)}</b> vs the signals it skipped.`;
 
@@ -486,67 +511,95 @@ function renderCompare(x){
   }).join("")||`<div class="sub">No settled trades yet</div>`;
 }
 
-/* ---------- render: P&L chart (SVG) ---------- */
+/* monotone cubic path through pixel points (Fritsch-Carlson): smooth, but never overshoots the data */
+function monoPath(P){
+  const n=P.length; if(n<2) return "";
+  const dx=[],m=[],t=[];
+  for(let i=0;i<n-1;i++){dx[i]=P[i+1][0]-P[i][0];m[i]=dx[i]>0?(P[i+1][1]-P[i][1])/dx[i]:0}
+  t[0]=m[0];t[n-1]=m[n-2];
+  for(let i=1;i<n-1;i++){ t[i]=(m[i-1]*m[i]<=0)?0:3*(dx[i-1]+dx[i])/((2*dx[i]+dx[i-1])/m[i-1]+(dx[i]+2*dx[i-1])/m[i]); }
+  let d=`M${P[0][0].toFixed(1)},${P[0][1].toFixed(1)}`;
+  for(let i=0;i<n-1;i++){const h=dx[i]/3;
+    d+=`C${(P[i][0]+h).toFixed(1)},${(P[i][1]+t[i]*h).toFixed(1)} ${(P[i+1][0]-h).toFixed(1)},${(P[i+1][1]-t[i+1]*h).toFixed(1)} ${P[i+1][0].toFixed(1)},${P[i+1][1].toFixed(1)}`;}
+  return d;
+}
+/* ---------- render: P&L chart (SVG line) ----------
+   Realized   = cumulative P&L of settled trades, one point per settlement
+   Unrealized = value of open trades vs their cost, one point per price refresh (every 5 min) */
 function renderChart(x){
-  const real=x.series.reduce((a,t)=>a+ +t.pnl,0), total=real+x.unreal;
-  $("hTotal").textContent=usd(total);$("hTotal").className="big "+cls(total);
-  $("hReal").textContent=usd(real);$("hReal").className="sm "+cls(real);
-  $("hUnreal").textContent=usd(x.unreal);$("hUnreal").className="sm "+cls(x.unreal);
+  const U=S.showUnreal, host=$("plot");
+  const real=x.series.reduce((a,t)=>a+ +t.pnl,0);
+  const set=(id,txt,c)=>{$(id).textContent=txt;if(c!=null)$(id).className=($(id).className.split(" ")[0])+" "+c};
+  $("chTitle").textContent=U?"Unrealized P&L · open trades, USD":"Strategy P&L · realized, USD";
+  $("swL").className=U?"":"a"; $("swR").className=U?"a":"";
+  if(!U){ $("hL0").textContent="Realized P&L"; set("hV0",usd(real),cls(real));
+          $("hL1").textContent="Settled trades"; set("hV1",String(x.settled),"");
+          $("hL2").textContent="ROI"; set("hV2",pct(x.roi),cls(x.roi));
+          $("lgd").innerHTML=`<i style="border-color:#1e9bf0"></i>Cumulative realized P&L`; }
+  else  { $("hL0").textContent="Unrealized now"; set("hV0",usd(x.unreal),cls(x.unreal));
+          $("hL1").textContent="Open trades"; set("hV1",String(x.open),"");
+          $("hL2").textContent="Cost at risk"; set("hV2",usd(x.exposure,false),"");
+          $("lgd").innerHTML=`<i style="border-color:#1e9bf0"></i>Open trades at mid price minus cost`; }
 
-  const host=$("plot"), W=host.clientWidth, H=host.clientHeight;
+  const W=host.clientWidth, H=host.clientHeight;
   if(W<50||H<50) return;
   const m={l:58,r:16,t:14,b:26};
-  // points: start at first trade open with 0, then each settlement
-  const first=S.trades.length?Math.min(...S.trades.map(t=>+new Date(t.opened_at))):Date.now();
-  let cum=0;
-  const pts=[{t:first,v:0}].concat(x.series.map(t=>({t:+new Date(t.settled_at),v:(cum+= +t.pnl),tr:t})));
-  const now={t:Date.now(),v:total,live:true};
-  const from=S.range?Date.now()-S.range*864e5:first;
-  const vis=pts.filter(p=>p.t>=from);
-  const before=pts.filter(p=>p.t<from).pop();
-  if(before) vis.unshift({t:from,v:before.v});
-  const all=vis.concat([now]);
-  const t0=Math.min(...all.map(p=>p.t)), t1=Math.max(...all.map(p=>p.t));
-  let lo=Math.min(0,...all.map(p=>p.v)), hi=Math.max(0,...all.map(p=>p.v));
+  let pts;
+  if(!U){
+    const first=S.trades.length?Math.min(...S.trades.map(t=>+new Date(t.opened_at))):Date.now();
+    let cum=0;
+    let lastT=first;
+    pts=[{t:first,v:0}].concat(x.series.map(t=>{const tt=Math.max(+new Date(t.settled_at),lastT+1000);lastT=tt;return {t:tt,v:(cum+= +t.pnl),tr:t}}));
+    pts.push({t:Date.now(),v:cum,end:true});
+  } else {
+    pts=S.snaps.map(r=>({t:+new Date(r.ts),v:+r.unrealized,n:r.open_count}));
+  }
+  host.querySelector("svg")?.remove();
+  if(pts.length<2){
+    host.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 ${W} ${H}"><text x="${W/2}" y="${H/2}" fill="#5f6b79" font-size="12" text-anchor="middle">${U?"Unrealized history is recording. The first points appear after the next 5-minute price refresh.":"No settled trades yet"}</text></svg>`);
+    return;
+  }
+  const t0=pts[0].t, t1=pts[pts.length-1].t;
+  let lo=Math.min(0,...pts.map(p=>p.v)), hi=Math.max(0,...pts.map(p=>p.v));
   const padv=(hi-lo||10)*.1; lo-=padv; hi+=padv;
   const X=t=>m.l+(t-t0)/((t1-t0)||1)*(W-m.l-m.r);
   const Y=v=>m.t+(hi-v)/(hi-lo)*(H-m.t-m.b);
-  // nice y ticks
   const step=(()=>{const r=(hi-lo)/5,p=10**Math.floor(Math.log10(r)),n=r/p;return (n<1.5?1:n<3?2:n<7?5:10)*p})();
   let g="";
   for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step){const y=Y(v);
     g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="${Math.abs(v)<1e-9?"#3a4655":"#161d26"}" ${Math.abs(v)<1e-9?"":'stroke-dasharray="2 4"'}/>`+
        `<text x="${m.l-8}" y="${y+4}" fill="#5f6b79" font-size="11" text-anchor="end">${usd(v).replace(".00","")}</text>`;}
-  // x ticks: ~6 dates
   const span=t1-t0, nT=Math.max(2,Math.floor((W-m.l-m.r)/110));
   for(let i=0;i<=nT;i++){const t=t0+span*i/nT;
     g+=`<text x="${X(t)}" y="${H-8}" fill="#5f6b79" font-size="11" text-anchor="${i===0?"start":i===nT?"end":"middle"}">${span<4*864e5?fmtDT(new Date(t)):fmtD(new Date(t))}</text>`;}
-  // step line: P&L only changes at settlement
-  let d="";vis.forEach((p,i)=>{d+=i?`H${X(p.t)}V${Y(p.v)}`:`M${X(p.t)},${Y(p.v)}`});
-  const lastV=vis.length?vis[vis.length-1]:{t:t0,v:0};
-  const z=Y(0);
-  const area=d?`${d}H${X(now.t)}V${z}H${X(vis[0].t)}Z`:"";
-  const mk=vis.filter(p=>p.tr).map(p=>`<circle cx="${X(p.t)}" cy="${Y(p.v)}" r="3.5" fill="${p.tr.pnl>0?"#19c5a5":"#f25f5c"}" stroke="#0d1117" stroke-width="2"/>`).join("");
-  host.querySelector("svg")?.remove();
+  const d=monoPath(pts.map(p=>[X(p.t),Y(p.v)]));
+  const base=H-m.b, area=`${d}L${X(t1)},${base}L${X(t0)},${base}Z`;
+  const topY=Math.min(...pts.map(p=>Y(p.v)));
+  const lineC="#1e9bf0", last=pts[pts.length-1];
+  const mk=U?"":pts.filter(p=>p.tr).map(p=>`<circle cx="${X(p.t)}" cy="${Y(p.v)}" r="2.6" fill="${p.tr.pnl>0?"#19c5a5":"#f25f5c"}" stroke="#0d1117" stroke-width="1.2"/>`).join("");
   host.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 ${W} ${H}">
     <defs>
-      <clipPath id="ca"><rect x="0" y="0" width="${W}" height="${z}"/></clipPath>
-      <clipPath id="cb"><rect x="0" y="${z}" width="${W}" height="${H}"/></clipPath>
+      <linearGradient id="fillG" gradientUnits="userSpaceOnUse" x1="0" y1="${topY}" x2="0" y2="${base}">
+        <stop offset="0" stop-color="#1e9bf0" stop-opacity=".38"/>
+        <stop offset=".55" stop-color="#1e9bf0" stop-opacity=".12"/>
+        <stop offset="1" stop-color="#1e9bf0" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="glow" x="-5%" y="-30%" width="110%" height="160%">
+        <feGaussianBlur stdDeviation="3.2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
     ${g}
-    <path d="${area}" fill="rgba(25,197,165,.12)" clip-path="url(#ca)"/>
-    <path d="${area}" fill="rgba(242,95,92,.12)" clip-path="url(#cb)"/>
-    <path d="${d}H${X(now.t)}" fill="none" stroke="#d7dee7" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M${X(now.t)},${Y(lastV.v)}V${Y(now.v)}" fill="none" stroke="#e8b04b" stroke-width="2" stroke-dasharray="4 3"/>
+    <path d="${area}" fill="url(#fillG)"/>
+    <path d="${d}" fill="none" stroke="${lineC}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)"/>
     ${mk}
-    <circle cx="${X(now.t)}" cy="${Y(now.v)}" r="5" fill="#e8b04b" stroke="#0d1117" stroke-width="2"/>
-    <text x="${X(now.t)-9}" y="${Y(now.v)-10}" fill="#e8b04b" font-size="11" text-anchor="end">now ${usd(now.v)}</text>
+    <circle cx="${X(last.t)}" cy="${Y(last.v)}" r="3.5" fill="${lineC}" stroke="#0d1117" stroke-width="1.5"/>
+    <text x="${X(last.t)-9}" y="${Y(last.v)-10}" fill="${lineC}" font-size="11" text-anchor="end">${usd(last.v)}</text>
     <line id="xh" y1="${m.t}" y2="${H-m.b}" stroke="#5f6b79" stroke-dasharray="3 3" visibility="hidden"/>
-    <circle id="xd" r="5" fill="none" stroke="#fff" stroke-width="2" visibility="hidden"/>
+    <circle id="xd" r="4.5" fill="none" stroke="#fff" stroke-width="1.5" visibility="hidden"/>
     <rect x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent" id="hit"/>
   </svg>`);
-  // crosshair + tooltip: snap to nearest settlement (or "now")
-  const hp=vis.filter(p=>p.tr).concat([now]);
+  const hp=U?pts:pts.filter(p=>p.tr||p.end);
   const svg=host.querySelector("svg"), tip=$("tip");
   $("hit").onmousemove=e=>{
     const bx=svg.getBoundingClientRect(), mx=e.clientX-bx.left;
@@ -554,9 +607,11 @@ function renderChart(x){
     const px=X(best.t),py=Y(best.v);
     svg.querySelector("#xh").setAttribute("x1",px);svg.querySelector("#xh").setAttribute("x2",px);svg.querySelector("#xh").setAttribute("visibility","visible");
     const c=svg.querySelector("#xd");c.setAttribute("cx",px);c.setAttribute("cy",py);c.setAttribute("visibility","visible");
-    tip.innerHTML=best.live
-      ? `<b>Now</b> · marked to market<br>Cumulative <b class="${cls(best.v)}">${usd(best.v)}</b><br><span class="muted">${x.open} open trades, unrealized ${usd(x.unreal)}</span>`
-      : `<b>${fmtDT(new Date(best.t))} UTC</b><br>Cumulative <b class="${cls(best.v)}">${usd(best.v)}</b><br>This trade <b class="${cls(best.tr.pnl)}">${usd(+best.tr.pnl)}</b> · entry ${cents(best.tr.price)}<div class="q">${esc(best.tr.question)}</div>`;
+    tip.innerHTML=U
+      ? `<b>${fmtDT(new Date(best.t))} UTC</b><br>Unrealized <b class="${cls(best.v)}">${usd(best.v)}</b><br><span class="muted">${best.n??"–"} open trades</span>`
+      : best.end
+      ? `<b>Now</b><br>Realized <b class="${cls(best.v)}">${usd(best.v)}</b><br><span class="muted">${x.settled} settled trades</span>`
+      : `<b>${fmtDT(new Date(best.t))} UTC</b><br>Realized <b class="${cls(best.v)}">${usd(best.v)}</b><br>This trade <b class="${cls(best.tr.pnl)}">${usd(+best.tr.pnl)}</b> · entry ${cents(best.tr.price)}<div class="q">${esc(best.tr.question)}</div>`;
     tip.style.display="block";
     const tw=tip.offsetWidth;tip.style.left=Math.min(Math.max(px+14,0),W-tw-4)+"px";
     if(px+14+tw>W) tip.style.left=Math.max(px-tw-14,0)+"px";
@@ -574,7 +629,7 @@ async function tick(){
   try{ await load(); await loadMarks(); renderAll(); }
   catch(e){ console.error(e); $("dot").className="dot err"; $("feed").textContent="database unreachable · retrying"; }
 }
-$("range").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.range=+b.dataset.r;[...$("range").children].forEach(c=>c.classList.toggle("on",c===b));renderChart(stats())};
+$("uSw").onchange=e=>{S.showUnreal=e.target.checked;$("tip").style.display="none";renderChart(stats())};
 $("sigFilter").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.sigF=b.dataset.f;[...$("sigFilter").children].forEach(c=>c.classList.toggle("on",c===b));renderSignals()};
 new ResizeObserver(()=>S.lastLoad&&renderChart(stats())).observe($("plot"));
 new ResizeObserver(()=>{if(S.lastLoad)$("dist").innerHTML=renderDist(stats())}).observe($("stats"));
@@ -600,7 +655,8 @@ function makeDemo(){
     signals.push({seen_at:new Date(now-(i*4)*60000-Math.floor(i/40)*H).toISOString(),market_id:String(6950000+i),city:c,band:["70-80c","80-90c","90-95c"][i%3],
       question:`Will the ${i%2?"highest":"lowest"} temperature in ${c} be ${8+i%22}°C on November ${day.getUTCDate()}?`,underdog_ask:.1+rnd()*.25,
       decision:tk?"TAKEN":"SKIP",reason:tk?"rule C: pass":["rule C: bucket rank 4","empty book","ask 0.319 > history 0.253 + 0.03","spread 0.31 > 0.10"][i%4]});}
-  return {trades,shadow,signals};
+  const snaps=[];for(let i=0;i<300;i++)snaps.push({ts:new Date(now-(300-i)*5*60000).toISOString(),unrealized:-40+Math.sin(i/18)*35+i*.08+(rnd()-.5)*8,open_count:14+Math.round(rnd()*4)});
+  return {trades,shadow,signals,snaps};
 }
 </script>
 </body>
