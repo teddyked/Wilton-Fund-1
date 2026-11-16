@@ -19,6 +19,7 @@
   --sans:Inter,'Segoe UI',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.35 var(--mono);font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit}
 
@@ -141,6 +142,89 @@ tbody tr:hover{background:var(--panel2)}
 .track .b{position:absolute;top:1px;height:8px;border-radius:2px}
 .edge{padding:8px 10px;color:var(--ink2);font-size:12px;border-top:1px solid var(--line)}
 
+/* ---------- desk switch (under the logo) ---------- */
+.dsw{display:flex;align-items:center;gap:7px;margin-top:3px;cursor:pointer;user-select:none;font:700 10px var(--sans);letter-spacing:.13em;text-transform:uppercase;color:#9aa3ae}
+.dsw input{display:none}
+.dsw .tr{width:30px;height:16px;border-radius:8px;background:#d5d9df;position:relative;transition:background .2s;flex:none}
+.dsw .tr::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#5b6573;transition:left .2s,background .2s}
+.dsw input:checked+.tr{background:#0b0f14}
+.dsw input:checked+.tr::after{left:16px;background:var(--accent)}
+.dsw .a{color:#0b0f14}
+.brand{min-width:300px}
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:2px;background:#eef0f3;border-radius:4px;padding:3px;margin-left:8px}
+.tabs a{font:700 11px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:#5b6573;text-decoration:none;padding:6px 10px;border-radius:3px}
+.tabs a.on{background:#0b0f14;color:#fff}
+/* ---------- TARS desk ---------- */
+#tarsView{height:calc(100vh - 58px - 26px);overflow:auto;padding:10px 12px 30px}
+.login{max-width:360px;margin:60px auto;background:var(--panel);border:1px solid var(--line);padding:22px}
+.login h2{margin:0 0 4px;font:700 13px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.login input,.dec input{background:var(--bg);border:1px solid var(--line2);color:var(--ink);font:13px var(--mono);padding:8px;width:100%;margin-top:8px}
+.login button{margin-top:12px;width:100%;padding:9px;background:var(--accent);color:#000;border:0;font:700 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.err{color:var(--down);margin-top:8px;font-size:12px;min-height:16px}
+.tbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:4px 2px 10px}
+.tbar .ttl{font:700 13px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.tbar .switch{margin-left:auto}
+.chk{color:var(--ink2);font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.ghost{background:none;border:1px solid var(--line2);color:var(--ink2);padding:5px 10px;cursor:pointer;font-size:12px}
+.ghost:hover{color:var(--ink);border-color:var(--ink2)}
+.tier{margin:6px 0 18px}
+.tier>h3{display:flex;align-items:center;gap:10px;margin:0 0 8px;font:700 12px var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.tier>h3 .n{color:var(--mute);font:500 12px var(--mono);letter-spacing:0}
+.tier.t1>h3{color:var(--up)}.tier.t2>h3{color:var(--dist)}.tier.t3>h3{color:var(--accent)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.card.done{border-color:var(--line2);opacity:.86}
+.ch{padding:10px 12px 8px;border-bottom:1px solid var(--line)}
+.ch .top{display:flex;gap:8px;align-items:flex-start}
+.ch .ev{font:600 14px/1.3 var(--sans);color:var(--ink);text-decoration:none;flex:1}
+.ch .ev:hover{text-decoration:underline}
+.ch .sub2{display:flex;gap:10px;flex-wrap:wrap;margin-top:5px;color:var(--mute);font-size:11.5px}
+.chip{font:600 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border:1px solid var(--line2);color:var(--ink2);border-radius:2px;white-space:nowrap}
+.rate{font:800 11px var(--sans);letter-spacing:.06em;padding:3px 7px;border-radius:3px;white-space:nowrap;border:1px solid}
+.rate.r0,.rate.r1{color:var(--up);border-color:rgba(25,197,165,.55);background:var(--up-bg)}
+.rate.r2{color:var(--dist);border-color:rgba(30,155,240,.55);background:rgba(30,155,240,.10)}
+.rate.r3{color:var(--ink2);border-color:var(--line2)}
+.rate.r4{color:#000;background:var(--warn);border-color:var(--warn)}
+.rate.r5{color:var(--mute);border-style:dashed;border-color:var(--line2)}
+.odds{display:grid;grid-template-columns:1fr 1fr 90px;gap:1px;background:var(--line)}
+.odds>div{background:var(--panel);padding:8px 12px;min-width:0}
+.odds .k{font:600 10px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.odds .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.odds .px{font:600 18px var(--mono);margin-top:2px}
+.side{font:700 10px var(--sans);padding:1px 5px;border-radius:2px;margin-left:6px;background:var(--line2);color:var(--ink)}
+details.rules{border-top:1px solid var(--line);padding:6px 12px}
+details.rules summary{cursor:pointer;color:var(--ink2);font-size:12px}
+details.rules div{white-space:pre-wrap;color:var(--ink2);font-size:12px;margin-top:6px;max-height:220px;overflow:auto}
+.arts{border-top:1px solid var(--line)}
+.art{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;padding:7px 12px;border-bottom:1px solid var(--line)}
+.art a{color:var(--ink);text-decoration:none}.art a:hover{text-decoration:underline}
+.art .m{grid-column:2;color:var(--mute);font-size:11px}
+.st{font:700 9.5px var(--sans);letter-spacing:.08em;padding:2px 5px;border-radius:2px;align-self:start;margin-top:1px}
+.st.STRONG{color:var(--up);border:1px solid rgba(25,197,165,.5)}.st.MEDIUM{color:var(--dist);border:1px solid rgba(30,155,240,.5)}.st.WEAK{color:var(--mute);border:1px solid var(--line2)}
+.bk{color:var(--accent);font-size:10.5px;margin-right:6px}
+.noart{padding:8px 12px;color:var(--mute);font-size:12px;border-top:1px solid var(--line)}
+.dec{display:grid;grid-template-columns:auto 80px 80px 1fr auto auto;gap:6px;padding:8px 12px 10px;align-items:end;margin-top:auto;border-top:1px solid var(--line);background:var(--panel2)}
+.dec label{font:600 9.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.dec input{margin-top:3px;padding:6px}
+.dec button{padding:7px 14px;font:800 12px var(--sans);letter-spacing:.1em;border:0;cursor:pointer;height:31px}
+.pick{display:flex;border:1px solid var(--line2);height:31px}
+.pick label{display:flex;align-items:center;gap:5px;padding:0 9px;cursor:pointer;font:700 11px var(--sans);letter-spacing:.06em;color:var(--ink2);white-space:nowrap}
+.pick label+label{border-left:1px solid var(--line2)}
+.pick input{display:none}
+.pick label:has(input:checked){background:var(--line2);color:var(--ink)}
+.pick label.off{opacity:.35;cursor:not-allowed}
+.odds>div.sel{box-shadow:inset 0 -2px 0 var(--accent)}
+.dec .buy{background:var(--up);color:#00140f}.dec .skp{background:var(--down);color:#1a0302}
+.dec button:disabled{opacity:.4;cursor:default}
+.dmsg{grid-column:1/-1;font-size:12px;color:var(--ink2)}
+.decided{padding:8px 12px;border-top:1px solid var(--line);background:var(--panel2);font-size:12px;display:flex;gap:10px;align-items:center}
+.decided a{color:var(--ink2);margin-left:auto;cursor:pointer;text-decoration:underline}
+.tdec{margin-top:8px}
+.dsum{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+.dsum table td,.dsum table th{padding:4px 8px}
+#dTable{font-size:12px}
+@media (max-width:700px){.cards{grid-template-columns:1fr}.dec{grid-template-columns:1fr 1fr}.pick{grid-column:1/-1}.dsum{grid-template-columns:1fr}.tabs{margin-left:0}}
 footer{height:26px;display:flex;align-items:center;gap:12px;padding:0 12px;color:var(--mute);font:500 11px var(--sans);border-top:1px solid var(--line)}
 footer b{color:var(--ink2)}
 
@@ -159,7 +243,7 @@ footer b{color:var(--ink2)}
     <img id="logo" src="logo.png" alt="Wilton" onerror="this.remove();document.getElementById('word').hidden=false">
     <div>
       <div class="word" id="word" hidden>WILTON</div>
-      <div class="sub">Weather Desk · Fund 1</div>
+      <label class="dsw" title="Switch desk"><span id="dwL" class="a">Weather desk</span><input type="checkbox" id="deskSw"><span class="tr"></span><span id="dwR">Discretionary desk</span></label>
     </div>
   </div>
   <div class="paper"><b>●</b> Paper trading · research only · not betting advice</div>
@@ -219,6 +303,39 @@ footer b{color:var(--ink2)}
     <div class="pb"><table>
       <thead><tr><th>Opened</th><th>Market</th><th class="r">Entry</th><th class="r">Resolves in</th><th class="r">Cost/P&amp;L</th></tr></thead>
       <tbody id="trBody"></tbody></table></div>
+  </section>
+</main>
+
+<main id="tarsView" hidden>
+  <!-- login (only the owner has an account; sign-ups are off) -->
+  <section class="login" id="tLogin" hidden>
+    <h2>Discretionary desk</h2>
+    <p class="muted">Private. Sign in with the owner account.</p>
+    <form id="tLoginForm">
+      <input type="email" id="tEmail" placeholder="Email" autocomplete="username" required>
+      <input type="password" id="tPass" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit">Sign in</button>
+      <div class="err" id="tLoginErr"></div>
+    </form>
+  </section>
+
+  <section id="tDesk" hidden>
+    <div class="tbar">
+      <span class="ttl">Discretionary desk</span>
+      <span class="muted" id="tMeta"></span>
+      <label class="switch" title="Order of cards inside each tier"><span id="sL" class="a">Track record</span><input type="checkbox" id="tSort"><span class="tr"></span><span id="sR">Past win %</span></label>
+      <label class="chk"><input type="checkbox" id="tStale"> show older targets</label>
+      <button class="ghost" id="tRefresh">Refresh</button>
+      <button class="ghost" id="tOut">Sign out</button>
+    </div>
+    <div id="tTiers"></div>
+    <section class="panel tdec">
+      <div class="ph"><h2>My decisions</h2><span class="meta" id="dMeta"></span></div>
+      <div class="pb" style="overflow:visible">
+        <div class="dsum" id="dSum"></div>
+        <table id="dTable"></table>
+      </div>
+    </section>
   </section>
 </main>
 
@@ -657,6 +774,225 @@ function makeDemo(){
       decision:tk?"TAKEN":"SKIP",reason:tk?"rule C: pass":["rule C: bucket rank 4","empty book","ask 0.319 > history 0.253 + 0.03","spread 0.31 > 0.10"][i%4]});}
   const snaps=[];for(let i=0;i<300;i++)snaps.push({ts:new Date(now-(300-i)*5*60000).toISOString(),unrealized:-40+Math.sin(i/18)*35+i*.08+(rnd()-.5)*8,open_count:14+Math.round(rnd()*4)});
   return {trades,shadow,signals,snaps};
+}
+</script>
+<script>
+/* =================== TARS desk ===================
+   Reads tars_targets / tars_articles / lars_decisions as the signed-in owner (Supabase Auth).
+   Visitors without the login see nothing: those tables are closed to the public key. */
+const T = { session:null, targets:[], arts:{}, decs:[], sortPast:false, stale:false, timer:null };
+const TIERS = ["HIGHLY PROBABLE","MILDLY PROBABLE","HUMAN JUDGEMENT"];
+const RATES = ["AAA","AA","A","B","C","NO HISTORY"];
+const rateIx = r => { const i=RATES.indexOf(String(r||"").trim().toUpperCase()); return i<0?5:i; };
+const safeUrl = u => /^https?:\/\//i.test(u||"") ? u : "#";
+const parseUTC = s => { if(!s) return null; let x=String(s).trim().replace(" ","T"); if(!/[zZ]|[+-]\d\d:?\d\d$/.test(x)) x+="Z"; const d=new Date(x); return isNaN(d)?null:d; };
+const pctv = v => v==null||v==="" ? "–" : (Math.abs(+v)<=1 ? (+v*100) : +v).toFixed(0)+"%";
+
+/* ---------- auth (password login, session kept in this browser) ---------- */
+function saveSess(s){ T.session=s; try{ s?localStorage.setItem("tars_sess",JSON.stringify(s)):localStorage.removeItem("tars_sess"); }catch(e){} }
+function loadSess(){ try{ return JSON.parse(localStorage.getItem("tars_sess")||"null"); }catch(e){ return null; } }
+async function auth(body,grant){
+  const r=await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=${grant}`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error_description||j.msg||j.message||("sign-in failed ("+r.status+")"));
+  return {access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+(j.expires_in||3600)*1000};
+}
+async function token(){
+  if(!T.session) return null;
+  if(Date.now()>T.session.expires_at-60000){
+    try{ saveSess(await auth({refresh_token:T.session.refresh_token},"refresh_token")); }
+    catch(e){ saveSess(null); return null; }
+  }
+  return T.session.access_token;
+}
+async function tsb(path,opt={}){
+  const tk=await token(); if(!tk) throw new Error("signed out");
+  const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...opt,headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${tk}`,"Content-Type":"application/json",...(opt.headers||{})}});
+  if(r.status===401){ saveSess(null); throw new Error("signed out"); }
+  if(!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0,200)}`);
+  return r.status===204?null:r.json().catch(()=>null);
+}
+
+/* ---------- data ---------- */
+async function tLoad(){
+  if(DEMO){ if(!T.targets.length) Object.assign(T,tDemo()); return; }
+  const since=new Date(Date.now()-2*3600e3).toISOString();
+  T.targets=await tsb(`tars_targets?select=*${T.stale?"":`&updated_at=gte.${encodeURIComponent(since)}`}&order=updated_at.desc&limit=300`)||[];
+  const ids=[...new Set(T.targets.map(t=>t.market_id))];
+  T.arts={};
+  for(let i=0;i<ids.length;i+=60){
+    const chunk=ids.slice(i,i+60).map(x=>`"${String(x).replace(/"/g,"")}"`).join(",");
+    const rows=await tsb(`tars_articles?select=market_id,bucket,title,link,source,age_hours,score,strength,why&market_id=in.(${encodeURIComponent(chunk)})&order=score.desc`)||[];
+    rows.forEach(a=>(T.arts[a.market_id]=T.arts[a.market_id]||[]).push(a));
+  }
+  T.decs=await tsb(`lars_decisions?select=*&order=decided_at.desc&limit=1000`)||[];
+}
+
+/* ---------- render: target cards ---------- */
+function daysLeft(t){ const d=parseUTC(t.ends_utc); if(!d) return "–"; const h=(d-Date.now())/3600e3; return h<=0?"ended":h<48?h.toFixed(0)+"h left":(h/24).toFixed(1)+"d left"; }
+function rateBadge(t){
+  const i=rateIx(t.crowd_track_record), lab=i===5?"no history":String(t.crowd_track_record).toUpperCase();
+  const w=t.won_minus_price==null?"":` ${t.won_minus_price>0?"+":""}${(+t.won_minus_price).toFixed(1)} pts`;
+  return `<span class="rate r${i}" title="Crowd track record: how honest the crowd's price has been in this category and price band. won − price${w||" n/a"}">${i===4?"⚠ ":""}${esc(lab)}${esc(w)}</span>`;
+}
+function hasSecond(t){ return t.second!=null&&String(t.second).trim()!==""&&t.second_price_c!=null; }
+function secondSide(t){ const n=String(t.second||"").trim().toLowerCase(); return n==="yes"?"YES":n==="no"?"NO":"YES"; } // yes/no market: the other side; multi market: YES on that outcome
+function lastDecision(mid){ return T.decs.find(d=>d.market_id===mid); }
+function cardHTML(t){
+  const arts=(T.arts[t.market_id]||[]).slice(0,6), ld=lastDecision(t.market_id), again=T.again?.has(t.market_id);
+  const artsHTML=arts.length?`<div class="arts">${arts.map(a=>`<div class="art">
+      <span class="st ${esc(a.strength)}">${esc(a.strength||"")}</span>
+      <a href="${esc(safeUrl(a.link))}" target="_blank" rel="noopener noreferrer">${esc(a.title)}</a>
+      <div class="m"><span class="bk">${/^second/i.test(a.bucket||"")?"2nd":"fav"}</span>${esc(a.source||"")} · ${a.age_hours==null?"–":(+a.age_hours).toFixed(0)+"h"} · score ${a.score??"–"}${a.why?` · ${esc(a.why)}`:""}</div></div>`).join("")}</div>`
+    :`<div class="noart">No articles found for this market.</div>`;
+  const decHTML=(ld&&!again)
+    ? `<div class="decided"><span class="res ${ld.decision==="BUY"?"w":"l"}">${ld.decision}</span><span class="chip">${ld.bucket==="second"?"2nd":"fav"}</span>${ld.pick?`<span class="ink2" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ld.pick)}</span>`:""}
+        ${ld.decision==="BUY"?`${usd(+ld.stake,false)} at ${(+ld.price_c).toFixed(0)}¢`:`at ${(+ld.price_c).toFixed(0)}¢`} · ${fmtDT(new Date(ld.decided_at))} UTC${ld.status&&ld.status!=="open"?` · ${esc(ld.status)}`:""}
+        <a data-again="${esc(t.market_id)}">decide again</a></div>`
+    : `<form class="dec" data-mid="${esc(t.market_id)}">
+        <div><label>Bucket</label><div class="pick">
+          <label><input type="radio" name="bk" value="favourite" checked>Fav ${t.fav_price_c==null?"":(+t.fav_price_c).toFixed(0)+"¢"}</label>
+          <label class="${hasSecond(t)?"":"off"}" title="${hasSecond(t)?"":"No 2nd bucket for this market"}"><input type="radio" name="bk" value="second" ${hasSecond(t)?"":"disabled"}>2nd ${hasSecond(t)?(+t.second_price_c).toFixed(0)+"¢":"–"}</label></div></div>
+        <div><label>Stake $</label><input type="number" name="stake" min="0" step="0.01" inputmode="decimal" placeholder="20"></div>
+        <div><label>Conf %</label><input type="number" name="conf" min="0" max="100" step="1" placeholder="opt."></div>
+        <div><label>Note</label><input type="text" name="note" maxlength="500" placeholder="why?"></div>
+        <button type="button" class="buy" data-d="BUY">BUY</button>
+        <button type="button" class="skp" data-d="SKIP">SKIP</button>
+        <div class="dmsg"></div></form>`;
+  return `<article class="card${ld&&!again?" done":""}">
+    <div class="ch"><div class="top"><a class="ev" href="${esc(safeUrl(t.url))}" target="_blank" rel="noopener noreferrer" title="Open on Polymarket">${esc(t.event)} ↗</a>${rateBadge(t)}</div>
+      <div class="sub2"><span class="chip">${esc(t.category||"–")}</span><span>${daysLeft(t)}</span><span>past win <b class="ink2">${pctv(t.past_win)}</b></span></div></div>
+    <div class="odds">
+      <div class="${(ld&&!again&&ld.bucket==="second")?"":"sel"}" data-col="favourite"><div class="k">Favourite</div><div class="nm">${esc(t.favourite||"–")}<span class="side">${esc(t.fav_side||"")}</span></div></div>
+      <div class="${(ld&&!again&&ld.bucket==="second")?"sel":""}" data-col="second"><div class="k">2nd bucket</div><div class="nm ink2">${esc(t.second||"–")}</div></div>
+      <div class="r"><div class="k">Fav · 2nd</div><div class="px">${t.fav_price_c==null?"–":(+t.fav_price_c).toFixed(0)+"¢"}</div><div class="muted">${t.second_price_c==null?"–":(+t.second_price_c).toFixed(0)+"¢"}</div></div>
+    </div>
+    ${t.rules?`<details class="rules"><summary>Resolution rules</summary><div>${esc(t.rules)}</div></details>`:""}
+    ${artsHTML}
+    ${decHTML}
+  </article>`;
+}
+function tRenderTargets(){
+  const by={}; T.targets.forEach(t=>{const k=TIERS.includes(String(t.tier).toUpperCase())?String(t.tier).toUpperCase():"OTHER";(by[k]=by[k]||[]).push(t)});
+  const sorter=T.sortPast
+    ? (a,b)=>(+b.past_win||0)-(+a.past_win||0)
+    : (a,b)=>rateIx(a.crowd_track_record)-rateIx(b.crowd_track_record)||(+b.won_minus_price||0)-(+a.won_minus_price||0);
+  const order=TIERS.concat(by.OTHER?["OTHER"]:[]);
+  $("tTiers").innerHTML=T.targets.length? order.map((k,i)=>{const list=(by[k]||[]).sort(sorter);
+    return `<section class="tier t${i+1}"><h3>${esc(k)} <span class="n">${list.length}</span></h3>
+      ${list.length?`<div class="cards">${list.map(cardHTML).join("")}</div>`:`<div class="muted" style="font-size:12px">Nothing in this tier right now.</div>`}</section>`}).join("")
+    : `<div class="muted" style="padding:30px 4px">No targets updated in the last 2 hours. Run tars_read.py, or tick "show older targets".</div>`;
+  const newest=T.targets.reduce((m,t)=>t.updated_at>m?t.updated_at:m,"");
+  $("tMeta").textContent=T.targets.length?`${T.targets.length} markets · TARS updated ${newest?ago(new Date(newest)):"–"}`:"";
+}
+
+/* ---------- render: my decisions ---------- */
+function hit(d){ // BUY is right if it won; SKIP is right if buying would have lost (settlement fills pnl as if bought)
+  if(d.status==="open"||d.pnl==null) return null;
+  return d.decision==="BUY" ? +d.pnl>0 : +d.pnl<=0;
+}
+function groupRows(key,labels){
+  const g={}; T.decs.forEach(d=>{const k=key(d);(g[k]=g[k]||[]).push(d)});
+  const keys=labels.filter(l=>g[l]).concat(Object.keys(g).filter(k=>!labels.includes(k)));
+  return keys.map(k=>{const ds=g[k], st=ds.filter(d=>hit(d)!=null), right=st.filter(hit).length;
+    const pnl=ds.filter(d=>d.decision==="BUY"&&d.pnl!=null).reduce((a,d)=>a+ +d.pnl,0);
+    return `<tr><td>${esc(k)}</td><td class="r">${ds.length}</td><td class="r">${ds.filter(d=>d.decision==="BUY").length}</td><td class="r">${st.length}</td>
+      <td class="r">${st.length?pct(right/st.length,false):"–"}</td><td class="r ${cls(pnl)}">${usd(pnl)}</td></tr>`}).join("");
+}
+function tRenderDecisions(){
+  const head=`<thead><tr><th></th><th class="r">Calls</th><th class="r">Buys</th><th class="r">Settled</th><th class="r">Hit rate</th><th class="r">P&amp;L</th></tr></thead>`;
+  const rl=d=>{const i=rateIx(d.crowd_track_record);return i===5?"NO HISTORY":RATES[i]};
+  $("dSum").innerHTML=T.decs.length?`<div><div class="sub">By tier</div><table>${head}<tbody>${groupRows(d=>String(d.tier||"–").toUpperCase(),TIERS)}</tbody></table></div>
+    <div><div class="sub">By crowd track record</div><table>${head}<tbody>${groupRows(rl,RATES)}</tbody></table></div>`:"";
+  const st=T.decs.filter(d=>hit(d)!=null), right=st.filter(hit).length;
+  $("dMeta").textContent=T.decs.length?`${T.decs.length} calls · ${st.length} settled · hit rate ${st.length?pct(right/st.length,false):"–"} · BUY right if it won, SKIP right if it lost`:"";
+  $("dTable").innerHTML=T.decs.length?`<thead><tr><th>Decided</th><th>Market</th><th>Tier</th><th>Rating</th><th>Call</th><th class="r">Price</th><th class="r">Stake</th><th class="r">Conf.</th><th>Status</th><th class="r">P&amp;L</th></tr></thead><tbody>`+
+    T.decs.slice(0,200).map(d=>{const h=hit(d);return `<tr title="${esc(d.note||"")}"><td class="muted">${fmtDT(new Date(d.decided_at))}</td><td class="ev" style="max-width:340px;overflow:hidden;text-overflow:ellipsis">${esc(d.event||d.market_id)}</td>
+      <td class="muted">${esc(d.tier||"")}</td><td>${esc(d.crowd_track_record||"")}</td>
+      <td><span class="res ${d.decision==="BUY"?"w":"l"}">${esc(d.decision)}</span> <span class="muted">${d.bucket==="second"?"2nd":"fav"} ${esc(d.side||"")}</span></td>
+      <td class="r">${d.price_c==null?"–":(+d.price_c).toFixed(0)+"¢"}</td><td class="r">${d.stake==null?"–":usd(+d.stake,false)}</td><td class="r">${d.confidence==null?"–":(+d.confidence).toFixed(0)+"%"}</td>
+      <td>${esc(d.status||"open")}${h==null?"":h?' <span class="up">✓</span>':' <span class="down">✗</span>'}</td>
+      <td class="r ${d.decision==="BUY"?cls(+d.pnl):"muted"}" ${d.decision==="SKIP"?'title="What buying would have made. Not counted in P&L."':""}>${d.pnl==null?"–":d.decision==="SKIP"?`(${usd(+d.pnl)})`:usd(+d.pnl)}</td></tr>`}).join("")+`</tbody>`
+    :`<tbody><tr><td class="muted" style="padding:14px">No decisions yet. Use BUY or SKIP on a card.</td></tr></tbody>`;
+}
+
+/* ---------- BUY / SKIP ---------- */
+async function decide(form,decision){
+  const mid=form.dataset.mid, t=T.targets.find(x=>x.market_id===mid), msg=form.querySelector(".dmsg");
+  const stake=form.stake.value===""?null:+form.stake.value, conf=form.conf.value===""?null:+form.conf.value;
+  if(decision==="BUY"&&!(stake>0)){ msg.textContent="Enter a stake for BUY."; form.stake.focus(); return; }
+  if(conf!=null&&(conf<0||conf>100)){ msg.textContent="Confidence must be 0 to 100."; return; }
+  const bk=(form.querySelector("input[name=bk]:checked")||{}).value||"favourite", two=bk==="second";
+  if(two&&!hasSecond(t)){ msg.textContent="This market has no 2nd bucket."; return; }
+  const row={market_id:mid,event:t.event,tier:t.tier,crowd_track_record:t.crowd_track_record,
+    bucket:bk,pick:two?t.second:t.favourite,side:two?secondSide(t):t.fav_side,
+    price_c:two?t.second_price_c:t.fav_price_c,stake:decision==="BUY"?stake:(stake||null),decision,confidence:conf,
+    articles_shown:Math.min(6,(T.arts[mid]||[]).length),note:form.note.value.trim()||null};
+  form.querySelectorAll("button").forEach(b=>b.disabled=true); msg.textContent="Saving…";
+  try{
+    if(DEMO){ T.decs.unshift({...row,decided_at:new Date().toISOString(),status:"open"}); }
+    else { await tsb("lars_decisions",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(row)});
+           T.decs=await tsb(`lars_decisions?select=*&order=decided_at.desc&limit=1000`)||[]; }
+    T.again?.delete(mid); tRenderTargets(); tRenderDecisions();
+  }catch(e){ msg.textContent="Not saved: "+e.message; form.querySelectorAll("button").forEach(b=>b.disabled=false); if(!T.session&&!DEMO) tShow(); }
+}
+
+/* ---------- view switching ---------- */
+async function tShow(){
+  const loggedIn=DEMO||!!T.session;
+  $("tLogin").hidden=loggedIn; $("tDesk").hidden=!loggedIn;
+  if(!loggedIn) return;
+  try{ await tLoad(); tRenderTargets(); tRenderDecisions(); }
+  catch(e){ if(!T.session&&!DEMO){ $("tLogin").hidden=false; $("tDesk").hidden=true; } else $("tMeta").textContent="Could not load: "+e.message; }
+}
+function route(){
+  const v=location.hash==="#tars"?"tars":"weather";
+  document.querySelector("main.grid").hidden=(v==="tars"); $("tarsView").hidden=(v!=="tars");
+  $("deskSw").checked=(v==="tars"); $("dwL").className=v==="tars"?"":"a"; $("dwR").className=v==="tars"?"a":"";
+  clearInterval(T.timer);
+  if(v==="tars"){ tShow(); T.timer=setInterval(()=>{ if(!document.querySelector("#tarsView form.dec input:focus")) tShow(); },60_000); }
+  else if(S.lastLoad) renderAll();
+}
+window.addEventListener("hashchange",route);
+$("deskSw").onchange=e=>{ location.hash=e.target.checked?"#tars":"#weather"; };
+
+$("tLoginForm").onsubmit=async e=>{
+  e.preventDefault(); $("tLoginErr").textContent="Signing in…";
+  try{ saveSess(await auth({email:$("tEmail").value.trim(),password:$("tPass").value},"password")); $("tPass").value=""; $("tLoginErr").textContent=""; tShow(); }
+  catch(err){ $("tLoginErr").textContent=err.message; }
+};
+$("tOut").onclick=()=>{ saveSess(null); T.targets=[];T.decs=[];T.arts={}; tShow(); };
+$("tRefresh").onclick=()=>tShow();
+$("tSort").onchange=e=>{ T.sortPast=e.target.checked; $("sL").className=T.sortPast?"":"a"; $("sR").className=T.sortPast?"a":""; tRenderTargets(); };
+$("tStale").onchange=e=>{ T.stale=e.target.checked; tShow(); };
+$("tTiers").addEventListener("change",e=>{
+  if(e.target.name!=="bk") return;
+  const card=e.target.closest(".card"); card.querySelectorAll(".odds>div[data-col]").forEach(d=>d.classList.toggle("sel",d.dataset.col===e.target.value));
+});
+$("tTiers").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-d]"); if(b){ decide(b.closest("form"),b.dataset.d); return; }
+  const a=e.target.closest("a[data-again]"); if(a){ (T.again=T.again||new Set()).add(a.dataset.again); tRenderTargets(); }
+});
+T.session=loadSess();
+route();
+
+/* ---------- demo data (only when SUPABASE_KEY is empty) ---------- */
+function tDemo(){
+  const now=Date.now(), iso=h=>new Date(now+h*3600e3).toISOString();
+  const targets=[
+    {market_id:"3580932",tier:"MILDLY PROBABLE",crowd_track_record:"AA",won_minus_price:4.1,past_win:78,category:"elections",event:"Taipei Mayor Election Winner",url:"https://example.com",ends_utc:iso(24*12),favourite:"Chiang Wan-an",fav_side:"YES",fav_price_c:74,second:"Puma Shen",second_price_c:24,rules:"This market resolves to the candidate who wins the 2026 Taipei mayoral election, per the official Central Election Commission results.",updated_at:iso(-0.3)},
+    {market_id:"3580995",tier:"MILDLY PROBABLE",crowd_track_record:"C",won_minus_price:-6.3,past_win:61,category:"elections",event:"Kaohsiung Mayor Election Winner",url:"https://example.com",ends_utc:iso(24*12),favourite:"Su Chiao-hui",fav_side:"YES",fav_price_c:66,second:"Lee Shu-chuan",second_price_c:31,rules:"Resolves per official results.",updated_at:iso(-0.3)},
+    {market_id:"5001",tier:"HIGHLY PROBABLE",crowd_track_record:"AAA",won_minus_price:2.2,past_win:93,category:"sports",event:"Will Team A win the league by May?",url:"https://example.com",ends_utc:iso(30),favourite:"No",fav_side:"NO",fav_price_c:91,second:"Yes",second_price_c:9,rules:"Resolves Yes if Team A is confirmed champion before May 31.",updated_at:iso(-0.2)},
+    {market_id:"5002",tier:"HIGHLY PROBABLE",crowd_track_record:"A",won_minus_price:1.0,past_win:88,category:"economics",event:"Fed decision in December",url:"https://example.com",ends_utc:iso(24*20),favourite:"No change",fav_side:"YES",fav_price_c:86,second:"25 bp cut",second_price_c:13,updated_at:iso(-0.2)},
+    {market_id:"5003",tier:"HUMAN JUDGEMENT",crowd_track_record:"no history",won_minus_price:null,past_win:null,category:"geopolitics",event:"Will Country X hold talks with Country Y by...?",url:"https://example.com",ends_utc:iso(24*40),favourite:"No",fav_side:"NO",fav_price_c:81,second:"Yes",second_price_c:19,updated_at:iso(-0.2)},
+  ];
+  const arts={"3580932":[{bucket:"favourite: Chiang Wan-an",title:"Poll: Chiang Wan-an holds a double-digit lead in Taipei",link:"https://example.com",source:"Taipei Times",age_hours:6,score:82,strength:"STRONG",why:"name in headline, 3/3 key words, 6h old"},
+      {bucket:"second: Puma Shen",title:"Puma Shen campaign launches new housing plan",link:"https://example.com",source:"Focus Taiwan",age_hours:30,score:58,strength:"MEDIUM",why:"name in headline, 1/3 key words, 30h old"},
+      {bucket:"favourite: Chiang Wan-an",title:"Chiang Wan-an to attend city council budget session",link:"https://example.com",source:"Taiwan News",age_hours:50,score:41,strength:"WEAK",why:"name in headline, 0/3 key words"}],
+    "5001":[{bucket:"favourite: No",title:"Team A drops points again as title race tightens",link:"https://example.com",source:"Reuters",age_hours:12,score:76,strength:"STRONG",why:"3/4 key words, 12h old, trusted source"}]};
+  const decs=[{decided_at:iso(-50),market_id:"x1",event:"Some earlier market",tier:"HIGHLY PROBABLE",crowd_track_record:"AA",side:"YES",price_c:88,stake:20,decision:"BUY",confidence:80,status:"settled",pnl:2.73},
+    {decided_at:iso(-40),market_id:"x2",event:"Another earlier market",tier:"MILDLY PROBABLE",crowd_track_record:"C",side:"YES",price_c:70,stake:null,decision:"SKIP",confidence:60,status:"settled",pnl:-20}];
+  return {targets,arts,decs};
 }
 </script>
 </body>
